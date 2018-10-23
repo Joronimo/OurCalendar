@@ -8,15 +8,19 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+import datetime
+
+
+
 ##############################################################################
 # Model definitions
 
 class User(db.Model):
-    """User of ratings website."""
+    """User of website."""
 
     __tablename__ = "users"
 
-    user_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     email = db.Column(db.String(64), nullable=True)
     password = db.Column(db.String(64), nullable=True)
 
@@ -25,35 +29,52 @@ class User(db.Model):
 
         return f"<User user_id={self.user_id} email={self.email}>"
 
+
+#table ties event id with invite id. One invite per guest, per event. 
+
+# events_invites = db.Table('events_guests', db.metadata,
+#     db.Column('event_id', db.Integer, db.ForeignKey('events.id')), 
+#     db.Column('invite_id', db.Integer, db.ForeignKey('invites.id')),
+#     )
+
+
 class Event(db.Model):
-    """User of ratings website."""
+    """event of calendar website."""
 
     __tablename__ = "events"
 
-    event_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    host = db.Column(db.String(64), nullable=True)
-    password = db.Column(db.String(64), nullable=True)
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    host_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
+    activate = db.Column(db.Boolean, default=False)
+    date = db.Column(db.DateTime)
+
+    invites = db.relationship("Invite", backref="events")
+    guests = db.relationship("User", secondary='invites', backref="events")
+
+
+    def invite_guests(self, users_list):
+        
+        for user in users_list:
+            #find user. query on email address. If email is registered = ok, if not, invite user to app.
+            #create invitation for user, with acceptance button of event.
+            pass
 
     def __repr__(self):
         """provide helpful representation when printed"""
 
         return f"<User user_id={self.user_id} email={self.email}>"
 
+
 class Invite(db.Model): 
-    """Movie ratings  by user"""
+    """Invite user to event"""
 
     __tablename__ = "invites"
 
-    invite_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.event_id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
-    accepted = db.Column(db.Boolean, nullable=True)
-
-    user = db.relationship("User", backref=db.backref("invites",
-                                                      order_by=invite_id))
-
-    event = db.relationship("Event", backref=db.backref("invites",
-                                                        order_by=invite_id))
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    date = db.Column(db.DateTime)    
+    accepted = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         """provide helpful representation when printed"""
@@ -70,14 +91,14 @@ def connect_to_db(app):
     """Connect the database to our Flask app."""
 
     # Configure to use our PstgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///ratings'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///calendar'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
 
 
 if __name__ == "__main__":
-    # As a convenience, if we run this module interactively, it will leave
+    # run this module interactively and it will leave
     # you in a state of being able to work with the database directly.
 
     from server import app
