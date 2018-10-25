@@ -19,7 +19,7 @@ app.secret_key = "ABC"
 app.jinja_env.undefined = StrictUndefined
 
 @app.route('/')
-def welcome():
+def homepage():
     """Homepage."""
 
     logout = request.args.get("loggedOut")
@@ -28,7 +28,6 @@ def welcome():
         session.clear()
         message = Markup("You have been successfully logged out.")
         flash(message)
-
 
     return render_template("homepage.html")
 
@@ -48,7 +47,7 @@ def processed_login():
 
     for tup in emails:
         if email in tup:
-            user_id = db.session.query(User.user_id).filter(User.email == email).all()
+            user_id = db.session.query(User.id).filter(User.email == email).all()
             user_id = user_id[0][0]
             session["user_id"] = user_id
             message = Markup("Logged In")
@@ -80,7 +79,7 @@ def processed_registration():
         user = User(email=email, password=password)
         db.session.add(user)
         db.session.commit()
-        session["user_id"] = user.user_id
+        session["user_id"] = user.id
         message = Markup("You are now registered!")
         flash(message)
         return render_template("homepage.html")
@@ -89,24 +88,43 @@ def processed_registration():
         flash(message)
         return render_template("login.html")
 
-@app.route("/users/<int:user_id>")
-def show_user_info(user_id):
-    """from URL with user ID, get all user information and display user page"""
+@app.route("/calendar")
+def view_calendar():
+    """Show registration page to enter email and password."""
 
-    users = User.query.all()
+    return render_template("calendar.html")
 
-    for user in users:
-        if user.user_id == user_id:
+# @app.route("/users/<int:user_id>")
+# def show_user_info(id):
+#     """from URL with user ID, get all user information and display user page"""
 
-            # user_ratings = Rating.query.filter(Rating.user_id == user.user_id).all()
+#     users = User.query.all()
 
-            event_and_invite_id = (
-            db.session.query(Invite.accepted, Event.host)
-            .join(Movie).filter(Rating.user_id == user.user_id).all())
+#     for user in users:
+#         if user.id == id:
 
-            return render_template("user_info.html",
-                                   user=user,
-                                   movies_and_ratings=movie_and_rating_id)
+#             event_and_invite_id = (
+#             db.session.query(Invite.accepted, Event.host)
+#             .join(Event).filter(Invite.id == user.id).all())
+
+#             return render_template("user_info.html",
+#                                    user=user,
+#                                    movies_and_ratings=movie_and_rating_id)
+
+@app.route("/invite")
+def create_invite():
+    """Allows logged in user to create and send an invite to guests to attend an event."""
+
+    return render_template("invite.html")
+
+@app.route("/invitation", methods=["POST"])
+def invitation():
+    """If all email addresses invited are memebers of OurCalendar send invitation. Else: invite to app."""
+
+    return render_template("invitation.html")
+
+
+
 
 #generate database
 
