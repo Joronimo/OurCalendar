@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<form action="/homepage" method="POST">
+    Event: <type="text" name="event name">
+    Event description: <type="text" name="description">
+    <br>
+
+    Time of event: 
+    <br>
+
+    Would you like to attend event?
+    <input type="radio" name="attend" value="yes" checked> yes
+    <input type="radio" name="decline" value="no" checked> no
+    <br>
+
+    <input type="submit" value="submit"> 
+</form>
+
+
+
+{% endblock %}
