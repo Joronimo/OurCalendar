@@ -9,6 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 import datetime
+import calendar
 
 
 
@@ -21,13 +22,14 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    email = db.Column(db.String(64), nullable=True)
+    email = db.Column(db.String(64), nullable=False)
     password = db.Column(db.String(64), nullable=True)
+    username = db.Column(db.String(64), nullable=False)
 
     def __repr__(self):
         """provide helpful representation when printed"""
 
-        return f"<User user_id={self.user_id} email={self.email}>"
+        return f"<User user_id={self.id} email={self.email}>"
 
 
 #table ties event id with invite id. One invite per guest, per event. 
@@ -44,9 +46,10 @@ class Event(db.Model):
     __tablename__ = "events"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    host_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
+    # host_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
     activate = db.Column(db.Boolean, default=False)
     date = db.Column(db.DateTime)
+    e_type = db.Column(db.String(64), nullable=True)
 
     invites = db.relationship("Invite", backref="events")
     guests = db.relationship("User", secondary='invites', backref="events")
@@ -62,7 +65,7 @@ class Event(db.Model):
     def __repr__(self):
         """provide helpful representation when printed"""
 
-        return f"<User user_id={self.user_id} email={self.email}>"
+        return f"<Event id={self.id} date={self.date}>"
 
 
 class Invite(db.Model): 
@@ -79,10 +82,7 @@ class Invite(db.Model):
     def __repr__(self):
         """provide helpful representation when printed"""
 
-        return f"<Rating ivite_id={self.invite_id}, \
-                         event_id={self.event_id}, \
-                         user_id={self.user_id}, \
-                         accepted={self.accepted}>"
+
 
 ##############################################################################
 # Helper functions-
@@ -103,4 +103,5 @@ if __name__ == "__main__":
 
     from server import app
     connect_to_db(app)
+    db.create_all()
     print("Connected to DB.")
