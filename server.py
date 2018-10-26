@@ -6,7 +6,7 @@ from flask import (Flask, render_template, redirect, request, flash, session,
                    Markup)
 from flask_debugtoolbar import DebugToolbarExtension
 
-from model import connect_to_db, db, User, Event, Invite
+from model import connect_to_db, db, User, Event
 
 app = Flask(__name__)
 
@@ -69,6 +69,7 @@ def processed_registration():
 
     email = request.form.get("email")
     password = request.form.get("password")
+    username = request.form.get("username")
 
     email_users = db.session.query(User.email)
     emails = email_users.filter(User.email == email).all()
@@ -76,7 +77,7 @@ def processed_registration():
     print("LOOK FOR THIS!!!!", emails)
 
     if emails == []:
-        user = User(email=email, password=password)
+        user = User(email=email, password=password, username=username)
         db.session.add(user)
         db.session.commit()
         session["user_id"] = user.id
@@ -118,11 +119,29 @@ def create_invite():
     return render_template("invite.html")
 
 @app.route("/invitation", methods=["POST"])
-def invitation():
+def find_event_send_invitation():
     """If all email addresses invited are memebers of OurCalendar send invitation. Else: invite to app."""
+
+    #get emails from invite 
+    emails = request.form.get("emails").split(',')
+
+    # email_in_User = User.id.query.filter_by(User.email=email).all()
+    # user_ids = email_in_User.filter(User.id).all()
+
+    user_events = Event.query.filter_by(User.id).all()
+    print(user_events)
+
+
 
     return render_template("invitation.html")
 
+@app.route("/event")
+def create_event():
+    """event gets added to database"""
+
+
+    #is priority users accepted 
+    pass
 
 
 

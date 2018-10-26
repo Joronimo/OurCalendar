@@ -22,23 +22,30 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    email = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.String(64), nullable=True)
-    username = db.Column(db.String(64), nullable=False)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+
+    # ensure username and email are unique when registering before adding to the table. 
+    # Doesn't just throw them to login page.
+    # __table_args__ = (UniqueConstraint('email', 'username'))
+
 
     def __repr__(self):
         """provide helpful representation when printed"""
 
         return f"<User user_id={self.id} email={self.email}>"
 
-
-#table ties event id with invite id. One invite per guest, per event. 
-
 # events_invites = db.Table('events_guests', db.metadata,
 #     db.Column('event_id', db.Integer, db.ForeignKey('events.id')), 
 #     db.Column('invite_id', db.Integer, db.ForeignKey('invites.id')),
 #     )
 
+#table ties event id with user id. an event can have many users, one user can have many events. 
+user_events = db.Table('user_events',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
+    db.Column('event_id', db.Integer, db.ForeignKey('events.id'))
+)
 
 class Event(db.Model):
     """event of calendar website."""
@@ -48,39 +55,22 @@ class Event(db.Model):
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     # host_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
     activate = db.Column(db.Boolean, default=False)
-    date = db.Column(db.DateTime)
-    e_type = db.Column(db.String(64), nullable=True)
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
 
-    invites = db.relationship("Invite", backref="events")
-    guests = db.relationship("User", secondary='invites', backref="events")
+    user_events = db.relationship('User', secondary=user_events, lazy='subquery',
+        backref=db.backref('ue', lazy=True))
+    # e_type = db.Column(db.String(64), nullable=True)
 
+    # user = db.relationship("User", backref=db.backref("events",
+    #                                                   order_by=id))
 
-    def invite_guests(self, users_list):
-        
-        for user in users_list:
-            #find user. query on email address. If email is registered = ok, if not, invite user to app.
-            #create invitation for user, with acceptance button of event.
-            pass
 
     def __repr__(self):
         """provide helpful representation when printed"""
 
         return f"<Event id={self.id} date={self.date}>"
 
-
-class Invite(db.Model): 
-    """Invite user to event"""
-
-    __tablename__ = "invites"
-
-    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    date = db.Column(db.DateTime)    
-    accepted = db.Column(db.Boolean, default=False)
-
-    def __repr__(self):
-        """provide helpful representation when printed"""
 
 
 
