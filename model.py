@@ -53,7 +53,7 @@ class Event(db.Model):
     __tablename__ = "events"
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    # host_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))  
     activate = db.Column(db.Boolean, default=False)
     start_time = db.Column(db.DateTime)
     end_time = db.Column(db.DateTime)
@@ -69,7 +69,7 @@ class Event(db.Model):
     def __repr__(self):
         """provide helpful representation when printed"""
 
-        return f"<Event id={self.id} date={self.date}>"
+        return f"<Event id={self.id}>"
 
 
 
