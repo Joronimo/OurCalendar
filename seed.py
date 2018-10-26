@@ -15,13 +15,15 @@ def seed():
 
     for i in range(10):
         hour = random.randrange(0,23)
+        u_id = random.randrange(1,10)
         
         u = User(email=fake.email(), 
                  password='ab12', 
                  username=fake.name())
         e = Event(activate=True, 
                   start_time=datetime.datetime(2018, 10, 26, hour, 00, 00), 
-                  end_time=datetime.datetime(2018, 10, 26, hour, 30, 00))
+                  end_time=datetime.datetime(2018, 10, 26, hour, 30, 00),
+                  user_id=u_id)
 
         db.session.add_all([e, u])
     db.session.commit()

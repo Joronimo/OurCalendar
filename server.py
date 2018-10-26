@@ -122,17 +122,19 @@ def create_invite():
 def find_event_send_invitation():
     """If all email addresses invited are memebers of OurCalendar send invitation. Else: invite to app."""
 
-    #get emails from invite 
+    #get emails from invite html 
     emails = request.form.get("emails").split(',')
+    print(emails)
 
-    # email_in_User = User.id.query.filter_by(User.email=email).all()
-    # user_ids = email_in_User.filter(User.id).all()
+    users_ids = []
 
-    user_events = Event.query.filter_by(User.id).all()
-    print(user_events)
-
-
-
+    for email in emails:
+        #######need to strip email for whitespace ########
+        user = User.query.filter_by(email=email).first()
+        users_ids.append(user.id)
+    for user in users_ids:
+        event = Event.query.filter_by(user_id=user).all()
+        print(event)
     return render_template("invitation.html")
 
 @app.route("/event")
