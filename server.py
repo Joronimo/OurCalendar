@@ -124,17 +124,26 @@ def find_event_send_invitation():
 
     #get emails from invite html 
     emails = request.form.get("emails").split(',')
-    print(emails)
 
     users_ids = []
 
     for email in emails:
-        #######need to strip email for whitespace ########
+        email = email.replace(" ", "")
         user = User.query.filter_by(email=email).first()
         users_ids.append(user.id)
+
+    all_events = set()
+
     for user in users_ids:
-        event = Event.query.filter_by(user_id=user).all()
-        print(event)
+        #get user events by their id
+        users_events = Event.query.filter_by(user_id=user).all()
+        #add each event to the set 'all_events'
+        for event in users_events:
+            all_events.add(event)
+   
+
+
+
     return render_template("invitation.html")
 
 @app.route("/event")
