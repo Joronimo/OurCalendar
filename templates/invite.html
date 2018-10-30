@@ -3,20 +3,45 @@
 
 
 <form action="/invitation" method="POST">
-    Title of Event: <input type="text" name="event name">
-    <br>
-    <br>
+  Title of Event:* <input type="text" name="event name">
+  <br>
+  <br>
 
-    email of invities: <textarea rows="5" cols="50" placeholder="Enter emails separated by a comma" name="emails">
-    </textarea>   
-    <br>
-    <br>
+  email of invities:* <textarea rows="5" cols="50" placeholder="Enter email addresses separated by a comma" name="emails"></textarea>   
+  <br>
+  <br>
 
-    Event description: <input type="text" name="description">
-    <br>
-    <br>
+  Event description: <input type="text" name="description">
+  <br>
+  <br>
 
-    <input type="submit">
+  How much time do you need?*
+  <br>
+  <select name="duration">
+    <option value=".25">15 minutes</option>
+    <option value=".5">30 minutes</option>
+    <option value="1">1 hour</option>
+    <option value="2">2 hours</option>
+    <option value="3">3 hours</option>
+    <option value="4">4 hours</option>
+    <option value="5">5 hours</option>
+    <option value="6">6 hours</option>
+    <option value="7">7 hours</option>
+    <option value="8">8 hours</option>
+  </select>
+  <br>
+  <br>
+
+  How soon would you like to host this event?*
+  <br>
+  <input type="radio" name="timeline" value="two weeks"> In the next two weeks
+  <input type="radio" name="timeline" value="month">In the next 30 days
+  <input type="radio" name="timeline" value="six months">In the next 6 months
+  <input type="radio" name="timeline" value="year">In the next year
+  <br>
+
+  <input type="submit">
+
 </form>
 
 

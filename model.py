@@ -36,12 +36,8 @@ class User(db.Model):
 
         return f"<User user_id={self.id} email={self.email}>"
 
-# events_invites = db.Table('events_guests', db.metadata,
-#     db.Column('event_id', db.Integer, db.ForeignKey('events.id')), 
-#     db.Column('invite_id', db.Integer, db.ForeignKey('invites.id')),
-#     )
 
-#table ties event id with user id. an event can have many users, one user can have many events. 
+#table ties event id with user id. One event can have many users and one user can have many events. 
 user_events = db.Table('user_events',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id')),
     db.Column('event_id', db.Integer, db.ForeignKey('events.id'))
@@ -58,13 +54,9 @@ class Event(db.Model):
     start_time = db.Column(db.DateTime)
     end_time = db.Column(db.DateTime)
 
-    user_events = db.relationship('User', secondary=user_events, lazy='subquery',
-        backref=db.backref('ue', lazy=True))
     # e_type = db.Column(db.String(64), nullable=True)
 
-    # user = db.relationship("User", backref=db.backref("events",
-    #                                                   order_by=id))
-
+   
 
     def __repr__(self):
         """provide helpful representation when printed"""
