@@ -8,6 +8,13 @@ from flask_debugtoolbar import DebugToolbarExtension
 
 from model import connect_to_db, db, User, Event
 
+from datetime import timedelta, datetime, date
+
+import calendar
+
+
+
+
 app = Flask(__name__)
 
 # Required to use Flask sessions and the debug toolbar
@@ -74,7 +81,6 @@ def processed_registration():
     email_users = db.session.query(User.email)
     emails = email_users.filter(User.email == email).all()
 
-    print("LOOK FOR THIS!!!!", emails)
 
     if emails == []:
         user = User(email=email, password=password, username=username)
@@ -95,22 +101,6 @@ def view_calendar():
 
     return render_template("calendar.html")
 
-# @app.route("/users/<int:user_id>")
-# def show_user_info(id):
-#     """from URL with user ID, get all user information and display user page"""
-
-#     users = User.query.all()
-
-#     for user in users:
-#         if user.id == id:
-
-#             event_and_invite_id = (
-#             db.session.query(Invite.accepted, Event.host)
-#             .join(Event).filter(Invite.id == user.id).all())
-
-#             return render_template("user_info.html",
-#                                    user=user,
-#                                    movies_and_ratings=movie_and_rating_id)
 
 @app.route("/invite")
 def create_invite():
@@ -127,24 +117,98 @@ def find_event_send_invitation():
 
     users_ids = []
 
+    # convert emails into user ids
     for email in emails:
         email = email.replace(" ", "")
         user = User.query.filter_by(email=email).first()
         users_ids.append(user.id)
-
+    
     all_events = set()
 
     for user in users_ids:
-        #get user events by their id
+        #get user events by their user id
         users_events = Event.query.filter_by(user_id=user).all()
-        #add each event to the set 'all_events'
-        for event in users_events:
-            all_events.add(event)
-   
 
+        #add each event start and end times to the set 'all_events'
+        for event in users_events:
+            events = Event.query.filter_by(id=event.id).all()
+            tup_of_event = (event.start_time, event.end_time)
+            all_events.add(tup_of_event)
+
+    ######### get timeline start and end  ############# 
+
+    timeline = request.form["timeline"]
+    duration = request.form["duration"]
+    
+   
+    #round start to the nearest quarter hour
+    def get_start_time():
+        """gets start time rounded to the nearest quarter hour starting at now"""
+
+        start = datetime.now()
+        start.replace(second=0, microsecond=0)
+
+
+        if start.minute < 45:
+            if start.hour == 23:
+                start.replace(day=start.day+1, hour=0, second=0, microsecond=0)
+            else:
+                start.replace(hour=start.hour + 1, second=0, microsecond=0)
+            return start
+        elif 00 >= start.minute <= 15:
+            start.replace(minute=15, second=0, microsecond=0)
+            print(start)
+            return start
+        elif 15 >= start.minute <= 30:
+            start.replace(minute=30, second=0, microsecond=0)
+            return start
+        elif 30 >= start.minute <= 45:
+            start.replace(minute=45, second=0, microsecond=0)
+            return start
+
+    start = get_start_time()
+    print("XXXXXXXXXXXXXxxxxXXXX")
+    print(get_start_time())
+
+    date_range = set()
+
+    if timeline == 'two weeks':
+        end = start.replace(day=start.day + 1)
+        print("Helllllllllllllo", end)
+        for n in range(int ((end - start).days)):
+            date_range.add(start + timedelta(n)) 
+
+    elif timeline == 'month':
+
+        end = start.replace(month=start.month + 1)
+
+        start_times = []
+
+        while start < end:
+            start_times.append(start)
+            print(start_times)
+            if start.minute == 45:
+                start.replace(hour=start.hour +1, minute=0)
+                print("if", start)
+            elif start.minute < 45:
+                break
+            else:
+                start = start.replace(minute=start.minute+15)
+                print("else", start)
+
+        print(start_times)
+
+    elif timeline == 'six months':
+        end = start + timedelta(days=180)
+        when = (start, end)
+
+    elif timeline == 'year':
+        end = start + timedelta(days=365)
+        when = (start, end)
 
 
     return render_template("invitation.html")
+
 
 @app.route("/event")
 def create_event():
