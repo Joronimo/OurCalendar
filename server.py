@@ -112,18 +112,18 @@ def create_invite():
 def find_event_send_invitation():
     """If all email addresses invited are memebers of OurCalendar send invitation. Else: invite to app."""
 
-    #get emails from invite html 
+    # get emails from invite html  
     emails = request.form.get("emails").split(',')
 
     users_ids = []
 
-    # convert emails into user ids
+   # convert emails into user ids 
     for email in emails:
         email = email.replace(" ", "")
         user = User.query.filter_by(email=email).first()
         users_ids.append(user.id)
     
-    all_events = set()
+    all_events = []
 
     for user in users_ids:
         #get user events by their user id
@@ -133,55 +133,41 @@ def find_event_send_invitation():
         for event in users_events:
             events = Event.query.filter_by(id=event.id).all()
             tup_of_event = (event.start_time, event.end_time)
-            all_events.add(tup_of_event)
+            all_events.append(tup_of_event)
 
-    ######### get timeline start and end  ############# 
 
+    # get timeline start and end   
     timeline = request.form["timeline"]
-    duration = request.form["duration"]
-    
-   
-    #round start to the nearest quarter hour
+
+   # set time to quarter hour intervals 
     def get_start_time():
-        """gets start time rounded to the nearest quarter hour starting at now"""
+        """gets start time rounded up to the nearest quarter hour starting at now()"""
 
         start = datetime.now()
-        print("XXXXXXXXXXXXXxxxxXXXX", start)
 
         if start.minute > 45:
             if start.hour == 23:
                 start = start.replace(day=start.day+1, hour=0, second=0, microsecond=0)
-                print(">45 if", start)
                 return start
             else:
                 start = start.replace(hour=start.hour + 1, minute=0, second=0, microsecond=0)
-                print(">45 else", start)
                 return start
         elif 0 < start.minute < 15:
             start = start.replace(minute=15, second=0, microsecond=0)
-            print("<15 else", start)
             return start
         elif 15 < start.minute < 30:
             start = start.replace(minute=30, second=0, microsecond=0)
-            print("<30 else", start)
             return start
         elif 30 < start.minute < 45:
             start = start.replace(minute=45, second=0, microsecond=0)
-            print("<45 else", start)
             return start
 
     start = get_start_time()
 
-    date_range = set()
-
+    # add time to list start_times, for use in comparison with user events. 
     if timeline == 'two weeks':
+
         end = start + timedelta(days=14)
-
-
-    elif timeline == 'month':
-
-        end = start + timedelta(days=30)
-
         start_times = []
 
         while start < end:
@@ -190,17 +176,83 @@ def find_event_send_invitation():
                 start = start + timedelta(hours=1)
                 start = start.replace(minute=0)
             else:
-                print('WAAAAAAAAAAAAAAAA', start.minute)
                 start = start + timedelta(minutes=15)
-        print(start_times)
+
+
+    elif timeline == 'month':
+
+        end = start + timedelta(days=30)
+        start_times = []
+
+        while start < end:
+            start_times.append(start)
+            if start.minute == 45:
+                start = start + timedelta(hours=1)
+                start = start.replace(minute=0)
+            else:
+                start = start + timedelta(minutes=15)
 
     elif timeline == 'six months':
         end = start + timedelta(days=180)
-        when = (start, end)
+        start_times = []
+
+        while start < end:
+            start_times.append(start)
+            if start.minute == 45:
+                start = start + timedelta(hours=1)
+                start = start.replace(minute=0)
+            else:
+                start = start + timedelta(minutes=15)
 
     elif timeline == 'year':
         end = start + timedelta(days=365)
-        when = (start, end)
+        start_times = []
+
+        while start < end:
+            start_times.append(start)
+            if start.minute == 45:
+                start = start + timedelta(hours=1)
+                start = start.replace(minute=0)
+            else:
+                start = start + timedelta(minutes=15) 
+
+
+    # get intended duration of event
+
+    duration = request.form["duration"]
+
+    if duration == '15':
+        duration = timedelta(minutes=15)
+    elif duration == '30':
+        duration = timedelta(minutes=30)
+    elif duration == '1':
+        duration = timedelta(hours=1)
+    elif duration == '2':
+        duration = timedelta(hours=2)
+    elif duration == '3':
+        duration = timedelta(hours=3)
+    elif duration == '4':
+        duration = timedelta(hours=4)
+    elif duration == '5':
+        duration = timedelta(hours=5)
+    elif duration == '6':
+        duration = timedelta(hours=6)
+    elif duration == '7':
+        duration = timedelta(hours=7)
+    elif duration == '8':
+        duration = timedelta(hours=8)
+
+    ## create list of dates within timeline range (start_times) at 15 min intervals for start time
+    #  end times = start + duration (user input)  
+    
+    all_time_in_range = []
+ 
+    for i in start_times:
+        all_time_in_range.append((i, i + duration))
+
+    ## Compare all_events to times_in_range and suggest first time not 
+    #  in times_in_range and not in all_events
+
 
 
     return render_template("invitation.html")
