@@ -146,56 +146,52 @@ def find_event_send_invitation():
         """gets start time rounded to the nearest quarter hour starting at now"""
 
         start = datetime.now()
-        start.replace(second=0, microsecond=0)
+        print("XXXXXXXXXXXXXxxxxXXXX", start)
 
-
-        if start.minute < 45:
+        if start.minute > 45:
             if start.hour == 23:
-                start.replace(day=start.day+1, hour=0, second=0, microsecond=0)
+                start = start.replace(day=start.day+1, hour=0, second=0, microsecond=0)
+                print(">45 if", start)
+                return start
             else:
-                start.replace(hour=start.hour + 1, second=0, microsecond=0)
+                start = start.replace(hour=start.hour + 1, minute=0, second=0, microsecond=0)
+                print(">45 else", start)
+                return start
+        elif 0 < start.minute < 15:
+            start = start.replace(minute=15, second=0, microsecond=0)
+            print("<15 else", start)
             return start
-        elif 00 >= start.minute <= 15:
-            start.replace(minute=15, second=0, microsecond=0)
-            print(start)
+        elif 15 < start.minute < 30:
+            start = start.replace(minute=30, second=0, microsecond=0)
+            print("<30 else", start)
             return start
-        elif 15 >= start.minute <= 30:
-            start.replace(minute=30, second=0, microsecond=0)
-            return start
-        elif 30 >= start.minute <= 45:
-            start.replace(minute=45, second=0, microsecond=0)
+        elif 30 < start.minute < 45:
+            start = start.replace(minute=45, second=0, microsecond=0)
+            print("<45 else", start)
             return start
 
     start = get_start_time()
-    print("XXXXXXXXXXXXXxxxxXXXX")
-    print(get_start_time())
 
     date_range = set()
 
     if timeline == 'two weeks':
-        end = start.replace(day=start.day + 1)
-        print("Helllllllllllllo", end)
-        for n in range(int ((end - start).days)):
-            date_range.add(start + timedelta(n)) 
+        end = start + timedelta(days=14)
+
 
     elif timeline == 'month':
 
-        end = start.replace(month=start.month + 1)
+        end = start + timedelta(days=30)
 
         start_times = []
 
         while start < end:
             start_times.append(start)
-            print(start_times)
             if start.minute == 45:
-                start.replace(hour=start.hour +1, minute=0)
-                print("if", start)
-            elif start.minute < 45:
-                break
+                start = start + timedelta(hours=1)
+                start = start.replace(minute=0)
             else:
-                start = start.replace(minute=start.minute+15)
-                print("else", start)
-
+                print('WAAAAAAAAAAAAAAAA', start.minute)
+                start = start + timedelta(minutes=15)
         print(start_times)
 
     elif timeline == 'six months':
