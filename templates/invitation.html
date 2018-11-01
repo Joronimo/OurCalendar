@@ -3,16 +3,18 @@
 
 
 <form action="/homepage" method="POST">
-    Event: <type="text" name="event name">
-    Event description: <type="text" name="description">
+    Event: <type="text" name="event name"> <p> {{ event_name }} </p>
+    Event description: <type="text" name="description"> <p> {{ event_description }} </p>
     <br>
 
-    Time of event: 
-    <br>
+    <div>
+        Event starts: 
+        <p> {{ suggested_start }} - {{ suggested_end }}</p>
+    </div>
 
     Would you like to attend event?
-    <input type="radio" name="attend" value="yes" checked> yes
-    <input type="radio" name="decline" value="no" checked> no
+    <input type="radio" name="attend" value="yes"> accept
+    <input type="radio" name="attend" value="no"> decline
     <br>
 
     <input type="submit" value="submit"> 
