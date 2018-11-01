@@ -144,22 +144,26 @@ def find_event_send_invitation():
         """gets start time rounded up to the nearest quarter hour starting at now()"""
 
         start = datetime.now()
+        start = start.replace(second=0, microsecond=0)
 
         if start.minute > 45:
             if start.hour == 23:
-                start = start.replace(day=start.day+1, hour=0, second=0, microsecond=0)
+                start = start + timedelta(days=1)
+                start = start.replace(hour=0, minute=0)
                 return start
             else:
-                start = start.replace(hour=start.hour + 1, minute=0, second=0, microsecond=0)
+                start = start.replace(hour=start.hour+1, minute=0)
                 return start
         elif 0 < start.minute < 15:
-            start = start.replace(minute=15, second=0, microsecond=0)
+            start = start.replace(minute=15)
             return start
         elif 15 < start.minute < 30:
-            start = start.replace(minute=30, second=0, microsecond=0)
+            start = start.replace(minute=30)
             return start
         elif 30 < start.minute < 45:
-            start = start.replace(minute=45, second=0, microsecond=0)
+            start = start.replace(minute=45)
+            return start
+        else:
             return start
 
     start = get_start_time()
@@ -250,12 +254,53 @@ def find_event_send_invitation():
     for i in start_times:
         all_time_in_range.append((i, i + duration))
 
+    ## remove all_time outside of user parameter: time of day
+
+    no_earlier = request.form["no earlier than"]
+    no_later = request.form["no later than"]
+    print(int(no_later))
+    print(int(no_earlier))
+
+    new_list = []
+
+    for time in all_time_in_range:
+        if time[0].hour > int(no_earlier) and time[1].hour < int(no_later):
+            new_list.append(time)
+        # elif time[1].hour < int(no_later):
+        #     new_list.append(time)
+    
+
+    print(new_list==all_time_in_range)
+    new_list = [(dt, dt2) for dt, dt2 in all_time_in_range 
+                          if dt.hour > int(no_earlier) and dt2.hour < int(no_later)]
+    print(new_list==all_time_in_range)
     ## Compare all_events to times_in_range and suggest first time not 
     #  in times_in_range and not in all_events
 
+    available_times = []
+
+    for event in all_events:
+        for time in all_time_in_range:
+            if event[1] < time[0]:
+                available_times.append((time[0],time[1]))      
+            else:
+                if time[0] < event[0] or time[0] < event[1]:
+                    if time[1] <event[0] or time[1] < event[1]:
+                        available_times.append((time[0],time[1]))
+
+    suggested_event_time = available_times[0]
+    suggested_start = suggested_event_time[0].strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
+    suggested_end = suggested_event_time[1].strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
+
+    event_name = request.form["event name"]
+    event_description = request.form["description"]
 
 
-    return render_template("invitation.html")
+    return render_template("invitation.html", 
+                            suggested_start=suggested_start, 
+                            suggested_end=suggested_end,
+                            event_name=event_name,
+                            event_description=event_description)
 
 
 @app.route("/event")
