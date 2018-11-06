@@ -6,7 +6,7 @@ from flask import (Flask, render_template, redirect, request, flash, session,
                    Markup)
 from flask_debugtoolbar import DebugToolbarExtension
 
-from model import connect_to_db, db, User, Event
+from model import connect_to_db, db, User, Event, Invited
 
 from datetime import timedelta, datetime, date
 
@@ -50,20 +50,25 @@ def processed_login():
     email = request.form.get("email")
     password = request.form.get("password")
 
-    emails = db.session.query(User.email).filter(User.email == email).all()
+    is_user = User.query.filter_by(email=email).first()
 
-    for tup in emails:
-        if email in tup:
-            user_id = db.session.query(User.id).filter(User.email == email).all()
-            user_id = user_id[0][0]
-            session["user_id"] = user_id
-            message = Markup("Logged In")
+    if is_user:
+        if is_user.password == password:
+            # activate session with user id set to variable
+            session["user_id"] = is_user.id
+            # welcome user by name
+            name = is_user.name
+            message = Markup(f"Welcome back, {name}.")
             flash(message)
-            return redirect(f"/users/{user_id}")
-
-    message = Markup("This email is not registered. Please register here.")
-    flash(message)
-    return render_template("registration.html")
+            return render_template("homepage.html")
+        else:
+            message = Markup("password incorrect.")
+            flash(message)
+            return render_template("login.html")
+    else:
+        message = Markup("This email is not registered. Please register here.")
+        flash(message)
+        return render_template("registration.html")
 
 @app.route("/registration")
 def registration():
@@ -78,22 +83,30 @@ def processed_registration():
     password = request.form.get("password")
     username = request.form.get("username")
 
-    email_users = db.session.query(User.email)
-    emails = email_users.filter(User.email == email).all()
+    check_email = User.query.filter_by(email=email).first()
 
-
-    if emails == []:
+    if check_email == None:
         user = User(email=email, password=password, username=username)
         db.session.add(user)
         db.session.commit()
+        #activate session with user id set to variable 
         session["user_id"] = user.id
+
         message = Markup("You are now registered!")
         flash(message)
         return render_template("homepage.html")
     else:
-        message = Markup("You already have an account. Please log in.")
+        message = Markup("This email already exists in our database. Please, log in.")
         flash(message)
         return render_template("login.html")
+
+
+@app.route('/inbox')
+def notifications():
+    """Event invite notifications."""
+
+
+    return render_template("inbox.html")
 
 @app.route("/calendar")
 def view_calendar():
@@ -110,31 +123,41 @@ def create_invite():
 
 @app.route("/invitation", methods=["POST"])
 def find_event_send_invitation():
-    """If all email addresses invited are memebers of OurCalendar send invitation. Else: invite to app."""
+    """Create event and invitations to event with suggested event time, based on user inputs and prioirity users' schedule."""
 
-    # get emails from invite html  
-    emails = request.form.get("emails").split(',')
+    # get emails and usernames from invite.html  
+    priority_users = request.form.get("invitees").split(',')
 
-    users_ids = []
+    user_objects = []
 
-   # convert emails into user ids 
-    for email in emails:
-        email = email.replace(" ", "")
-        user = User.query.filter_by(email=email).first()
-        users_ids.append(user.id)
+   # convert user's email or username into user's id 
+    for a in priority_users:
+        a = a.replace(" ", "")
+        if "@" in a:   
+            user = User.query.filter_by(email=a).first()
+            user_objects.append(user)
+        else:
+            user = User.query.filter_by(username=a).first()
+            user_objects.append(user)
+
+    if None in user_objects:
+        message = Markup("A username or email does not exist, please check the data and try again.")
+        flash(message)
+        return render_template("invite.html")
     
     all_events = []
 
-    for user in users_ids:
-        #get user events by their user id
-        users_events = Event.query.filter_by(user_id=user).all()
+    for user in user_objects:
+        ## each individual user has access to the User table. .events gets each 
+        # event assossiated with the individual user. 
+        user_events = user.events
 
         #add each event start and end times to the set 'all_events'
-        for event in users_events:
-            events = Event.query.filter_by(id=event.id).all()
+        for event in user_events:
+            # use Invited event id to get Event table's event start and end date
+            event = Event.query.filter_by(id=event.id).first()
             tup_of_event = (event.start_time, event.end_time)
             all_events.append(tup_of_event)
-
 
     # get timeline start and end   
     timeline = request.form["timeline"]
@@ -254,26 +277,14 @@ def find_event_send_invitation():
     for i in start_times:
         all_time_in_range.append((i, i + duration))
 
-    ## remove all_time outside of user parameter: time of day
+    ## remove all_time outside of user input time of day
 
     no_earlier = request.form["no earlier than"]
     no_later = request.form["no later than"]
-    print(int(no_later))
-    print(int(no_earlier))
 
-    new_list = []
-
-    for time in all_time_in_range:
-        if time[0].hour > int(no_earlier) and time[1].hour < int(no_later):
-            new_list.append(time)
-        # elif time[1].hour < int(no_later):
-        #     new_list.append(time)
-    
-
-    print(new_list==all_time_in_range)
-    new_list = [(dt, dt2) for dt, dt2 in all_time_in_range 
+    all_time_in_range = [(dt, dt2) for dt, dt2 in all_time_in_range 
                           if dt.hour > int(no_earlier) and dt2.hour < int(no_later)]
-    print(new_list==all_time_in_range)
+
     ## Compare all_events to times_in_range and suggest first time not 
     #  in times_in_range and not in all_events
 
@@ -295,12 +306,61 @@ def find_event_send_invitation():
     event_name = request.form["event name"]
     event_description = request.form["description"]
 
+    # add to event table as a deactivated event.
+    event = Event(host=session["user_id"], 
+                  name=event_name, 
+                  description=event_description,
+                  start_time=suggested_event_time[0],
+                  end_time=suggested_event_time[1]
+                  )
+    db.session.add(event)
+    db.session.commit()
 
-    return render_template("invitation.html", 
-                            suggested_start=suggested_start, 
-                            suggested_end=suggested_end,
-                            event_name=event_name,
-                            event_description=event_description)
+    # add to invites table
+    # user_objects at the top of function.
+    for invitee in user_objects:
+
+        new_invite = Invited(user_id=invitee.id,
+                        event_id=event.id,
+                        is_priority=True
+                        )
+
+        db.session.add(new_invite)
+        db.session.commit()
+
+
+    invitees = request.form.get("invitees").split(',')
+
+    invited = []
+
+    # convert user's email or username into user's id 
+    for i in invitees:
+        i = i.replace(" ", "")
+        if "@" in a:   
+            user = User.query.filter_by(email=a).first()
+            invited.append(user.id)
+        else:
+            user = User.query.filter_by(username=a).first()
+            invited.append(user.id)
+
+    for i in invited:
+        invite = Invited(user_id=i,
+                        event_id=event.id)
+        db.session.add(invite)
+    db.session.commit()
+
+    #add invite to host's invited collumn and event render
+    host = session["user_id"]
+    host_invite = Invited(user_id=host,
+                              event_id=event.id,
+                              is_priority=True,
+                              is_accepted=True)
+    db.session.add(host_invite)
+    db.session.commit()
+
+    message = Markup("Your invitations have been sent and the event has been added to your calendar.")
+    flash(message)
+    return render_template("homepage.html")
 
 
 @app.route("/event")
