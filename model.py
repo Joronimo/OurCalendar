@@ -47,6 +47,7 @@ class Invited(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), primary_key=True)
     is_accepted = db.Column(db.Boolean, default=False)
+    is_declined = db.Column(db.Boolean, default=False)
     is_priority = db.Column(db.Boolean, default=False)
     user = db.relationship("User", back_populates="events")
     event = db.relationship("Event", back_populates="users")

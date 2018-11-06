@@ -126,11 +126,10 @@ def find_event_send_invitation():
     """Create event and invitations to event with suggested event time, based on user inputs and prioirity users' schedule."""
 
     # get emails and usernames from invite.html  
-    priority_users = request.form.get("invitees").split(',')
+    priority_users = request.form.get("priority_users").split(',')
 
     user_objects = []
-
-   # convert user's email or username into user's id 
+   # convert user's email/username into a user object stored in user_object list
     for a in priority_users:
         a = a.replace(" ", "")
         if "@" in a:   
@@ -140,24 +139,33 @@ def find_event_send_invitation():
             user = User.query.filter_by(username=a).first()
             user_objects.append(user)
 
+
+    # if the request.form returns incorrect user data ie. typo, this should 
+    # catch it and return an error, so the user can adjust accordingly.
     if None in user_objects:
         message = Markup("A username or email does not exist, please check the data and try again.")
         flash(message)
         return render_template("invite.html")
-    
+
+    # start and end dates of each event priority users are invited to and havent
+    # declined.
     all_events = []
-
+    #get all events for every user object and add event ids to list all_events
     for user in user_objects:
-        ## each individual user has access to the User table. .events gets each 
-        # event assossiated with the individual user. 
-        user_events = user.events
+        invited_event_ids = []
+        user_invites = Invited.query.filter_by(user_id=user.id).all()
 
-        #add each event start and end times to the set 'all_events'
-        for event in user_events:
-            # use Invited event id to get Event table's event start and end date
-            event = Event.query.filter_by(id=event.id).first()
-            tup_of_event = (event.start_time, event.end_time)
-            all_events.append(tup_of_event)
+        for ui in user_invites:
+            if ui.is_declined == False:
+                invited_event_ids.append(ui.event_id)
+
+            #add each event start and end times to the set 'all_events'
+            for e_id in invited_event_ids:
+                # using same event_id from Invited table to get content from 
+                # Event table
+                event = Event.query.filter_by(id=e_id).first()
+                tup_of_event = (event.start_time, event.end_time)
+                all_events.append(tup_of_event)
 
     # get timeline start and end   
     timeline = request.form["timeline"]
@@ -317,7 +325,8 @@ def find_event_send_invitation():
     db.session.commit()
 
     # add to invites table
-    # user_objects at the top of function.
+
+    # user_objects at the top of function. Priority users.
     for invitee in user_objects:
 
         new_invite = Invited(user_id=invitee.id,
@@ -331,23 +340,24 @@ def find_event_send_invitation():
 
     invitees = request.form.get("invitees").split(',')
 
+
     invited = []
 
     # convert user's email or username into user's id 
     for i in invitees:
         i = i.replace(" ", "")
-        if "@" in a:   
-            user = User.query.filter_by(email=a).first()
+        if "@" in i:   
+            user = User.query.filter_by(email=i).first()
             invited.append(user.id)
         else:
-            user = User.query.filter_by(username=a).first()
+            user = User.query.filter_by(username=i).first()
             invited.append(user.id)
 
     for i in invited:
         invite = Invited(user_id=i,
                         event_id=event.id)
         db.session.add(invite)
-    db.session.commit()
+        db.session.commit()
 
     #add invite to host's invited collumn and event render
     host = session["user_id"]
