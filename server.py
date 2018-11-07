@@ -25,7 +25,7 @@ app.secret_key = "ABC"
 # error.
 app.jinja_env.undefined = StrictUndefined
 
-@app.route('/')
+@app.route("/", methods=["GET", "POST"])
 def homepage():
     """Homepage."""
 
@@ -370,18 +370,17 @@ def notifications():
             if i.is_accepted == False:
                 #get event info with i.id
                 event = Event.query.filter_by(id=i.event_id).first()
-                print(event)
                 name = event.name
-                print(name)
                 description = event.description
-                print(description)
                 start = event.start_time.strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
                 end = event.end_time.strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
+                e_id = event.id
                 return render_template("invitation.html", 
                                        event_name=name, 
                                        event_description=description,
                                        start_time=start,
-                                       end_time=end
+                                       end_time=end,
+                                       event_id=e_id
                                        )
 
     message = Markup("You have no invitations at this time.")
@@ -390,14 +389,27 @@ def notifications():
 
 
 
+@app.route("/process-invitation", methods=["POST"])
+def process_invitation():
+    """process user input (accept or decline) of event invititation"""
+    
+    responce = request.form.get('attend')
+    e_id = request.form.get("event_id")
 
-@app.route("/event")
-def create_event():
-    """event gets added to database"""
+    #handling the responce
+    if responce == None:
+        message = Markup("Please mark either attend or decline.")
+        flash(message)
+        return render_template("invitation.html")
+    # elif responce == "yes":
 
 
-    #is priority users accepted 
-    pass
+    
+
+    message = Markup("You made it")
+    flash(message)
+    return render_template("homepage.html")
+
 
 
 
