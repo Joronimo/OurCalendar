@@ -101,20 +101,6 @@ def processed_registration():
         return render_template("login.html")
 
 
-@app.route('/inbox')
-def notifications():
-    """Event invite notifications."""
-
-
-    return render_template("inbox.html")
-
-@app.route("/calendar")
-def view_calendar():
-    """Show registration page to enter email and password."""
-
-    return render_template("calendar.html")
-
-
 @app.route("/invite")
 def create_invite():
     """Allows logged in user to create and send an invite to guests to attend an event."""
@@ -150,7 +136,8 @@ def find_event_send_invitation():
     # start and end dates of each event priority users are invited to and havent
     # declined.
     all_events = []
-    #get all events for every user object and add event ids to list all_events
+    # get all events for every user object and add event start and end times 
+    # to list all_events
     for user in user_objects:
         invited_event_ids = []
         user_invites = Invited.query.filter_by(user_id=user.id).all()
@@ -167,12 +154,12 @@ def find_event_send_invitation():
                 tup_of_event = (event.start_time, event.end_time)
                 all_events.append(tup_of_event)
 
-    # get timeline start and end   
+    # how soon event should take place  
     timeline = request.form["timeline"]
 
-   # set time to quarter hour intervals 
+
     def get_start_time():
-        """gets start time rounded up to the nearest quarter hour starting at now()"""
+        """rounds up the current time to the nearest quarter hour"""
 
         start = datetime.now()
         start = start.replace(second=0, microsecond=0)
@@ -308,9 +295,7 @@ def find_event_send_invitation():
                         available_times.append((time[0],time[1]))
 
     suggested_event_time = available_times[0]
-    suggested_start = suggested_event_time[0].strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
-    suggested_end = suggested_event_time[1].strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
-
+    
     event_name = request.form["event name"]
     event_description = request.form["description"]
 
@@ -371,6 +356,39 @@ def find_event_send_invitation():
     message = Markup("Your invitations have been sent and the event has been added to your calendar.")
     flash(message)
     return render_template("homepage.html")
+
+@app.route('/inbox')
+def notifications():
+    """
+       Render invitation if user has an unanswered invitation or send them to 
+       the mainpage if not.
+    """
+    invites = Invited.query.filter_by(user_id=session["user_id"]).all()
+
+    for i in invites:
+        if i.is_declined == False:
+            if i.is_accepted == False:
+                #get event info with i.id
+                event = Event.query.filter_by(id=i.event_id).first()
+                print(event)
+                name = event.name
+                print(name)
+                description = event.description
+                print(description)
+                start = event.start_time.strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
+                end = event.end_time.strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
+                return render_template("invitation.html", 
+                                       event_name=name, 
+                                       event_description=description,
+                                       start_time=start,
+                                       end_time=end
+                                       )
+
+    message = Markup("You have no invitations at this time.")
+    flash(message)
+    return render_template("homepage.html")
+
+
 
 
 @app.route("/event")
