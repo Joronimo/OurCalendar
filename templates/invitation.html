@@ -3,13 +3,13 @@
 
 
 <form action="/homepage" method="POST">
-    Event: <type="text" name="event name"> <p> {{ event_name }} </p>
+    Event: <type="text" name="name"> <p> {{ event_name }} </p>
     Event description: <type="text" name="description"> <p> {{ event_description }} </p>
     <br>
 
     <div>
         Event starts: 
-        <p> {{ suggested_start }} - {{ suggested_end }}</p>
+        <p> {{ start_time }} - {{ end_time }}</p>
     </div>
 
     Would you like to attend event?
