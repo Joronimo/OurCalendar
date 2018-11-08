@@ -366,8 +366,7 @@ def notifications():
     invites = Invited.query.filter_by(user_id=session["user_id"]).all()
 
     for i in invites:
-        if i.is_declined == False:
-            if i.is_accepted == False:
+        if i.is_declined == False and i.is_accepted == False:
                 #get event info with i.id
                 event = Event.query.filter_by(id=i.event_id).first()
                 name = event.name
@@ -401,9 +400,47 @@ def process_invitation():
         message = Markup("Please mark either attend or decline.")
         flash(message)
         return render_template("invitation.html")
-    # elif responce == "yes":
+    elif responce == "yes":
+        #get all invites for this event
+        invite_objs = Invited.query.filter_by(event_id=e_id).all()
+        #all priority user ids for the event
+        event_user_objs = []
+        count_prioirty_users = 0
+        for i in invite_objs:
+            #if Invited user is session user
+            if i.user_id == session["user_id"]:
+                i.is_accepted = True
+                db.session.commit()
 
+            if i.is_priority == True:
+                event_user_objs.append(i.user_id)
+                for user in event_user_objs:
+                    if i.user_id == user:
+                        #count if each priority user has accepted the invite
+                        if i.is_priority == True and i.is_accepted == True:
+                            count_prioirty_users += 1
+                            #if all priority user's have accepted change the 
+                            #event status to active
+                            if count_prioirty_users == len(event_user_objs):
+                                event = Event.query.filter_by(id=e_id).first()
+                                event.is_active = True
+                                db.session.commit()
 
+    elif responce == "no":
+        #get all invites for this event
+        invite_objs = Invited.query.filter_by(event_id=e_id).all()
+        for i in invite_objs:
+            if i.user_id == session['user_id']:
+                i.is_declined = True
+                db.session.commit()
+            # if i.is_prioirty == True:
+                # ask user if she would like to be removed as priority user to
+                # let event continue without her/him. Or look for a new time for
+                # the event to take place.
+                # if new event time ->
+                # -> cancel event and invites
+                # -> make a new event with same host and suggested_time[1]
+                # -> send new invites. 
     
 
     message = Markup("You made it")
