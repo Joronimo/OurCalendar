@@ -70,6 +70,8 @@ class Event(db.Model):
     description = db.Column(db.String(360), nullable=True)
     start_time = db.Column(db.DateTime)
     end_time = db.Column(db.DateTime)
+    timeline = db.Column(db.String(86), nullable=True)
+    duration = db.Column(db.String(86), nullable=True)
     users = db.relationship("Invited", back_populates="event")
 
     def __repr__(self):
