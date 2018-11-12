@@ -108,26 +108,24 @@ def create_invite():
 
     return render_template("invite.html")
 
-@app.route("/invitation", methods=["POST"])
-def find_event_send_invitation():
-    """Create event and invitations to event with suggested event time, based on user inputs and prioirity users' schedule."""
-
-
-    def get_user_objects_from_priority_users_list(p_users_list):
+def get_user_objs_from_priority_users_list_recursive(p_users_list):
         """ by inputing the list of users for an event, this will clean the list 
             and return a new list of user objects per user. Or return an error 
             if the host input a name in an error.""" 
-        user_objects = []
-       # convert user's email/username into a user object stored in user_object list
-        for a in p_users_list:
-            a = a.replace(" ", "")
-            if "@" in a:   
-                user = User.query.filter_by(email=a).first()
-                user_objects.append(user)
-            else:
-                user = User.query.filter_by(username=a).first()
-                user_objects.append(user)
 
+        for p in p_users_list: 
+            if isinstance(p, list):
+                get_user_objs_from_priority_users_list_recursive(p)
+            else:
+                user_objects = []
+               # convert user's email/username into a user object stored in user_object list
+                p = p.replace(" ", "")
+                if "@" in a:   
+                    user = User.query.filter_by(email=p).first()
+                    user_objects.append(user)
+                else:
+                    user = User.query.filter_by(username=p).first()
+                    user_objects.append(user)
 
         # if the request.form returns incorrect user data ie. typo, this should 
         # catch it and return an error, so the user can adjust accordingly.
@@ -138,7 +136,7 @@ def find_event_send_invitation():
 
         return user_objects
 
-    def get_events_from_user_objects(u_objs):
+def get_events_from_user_objects(u_objs):
         """ using the list of user objects, create a list of tuples where the
             start and end tuple is the duration of each event."""
 
@@ -163,7 +161,7 @@ def find_event_send_invitation():
 
         return all_events
 
-    def get_start_time():
+def get_start_time():
         """ rounds up the current time to the nearest quarter hour"""
 
         start = datetime.now()
@@ -189,11 +187,12 @@ def find_event_send_invitation():
         else:
             return start
 
-    def get_listed_timeline_intervals_of_qtr_hr(timeline):
+def get_listed_timeline_intervals_of_qtr_hr(timeline):
         """ using the timeline input by user, break that down into quarter hour 
             intervals and place each into a list. This list will be used for the 
             "start times" of the suggested time, tuple."""
 
+        start = get_start_time()
         # add time to list start_times, for use in comparison with user events. 
         if timeline == 'two weeks':
 
@@ -248,10 +247,12 @@ def find_event_send_invitation():
 
         return start_times
 
-    def get_all_time_in_range_from_duration(duration):
+def get_all_time_in_range_from_duration(duration, start_times):
         """ accounting for the length of the meeting == duration. And accounting
             for the time of day the host would like the meeting to take place.
             Return a list of times the meeting is able to take place."""
+
+        start_times = start_times
 
         if duration == '15':
             duration = timedelta(minutes=15)
@@ -291,7 +292,7 @@ def find_event_send_invitation():
 
         return all_time_in_range
 
-    def suggeted_event_time(possible_events_list):
+def suggeted_event_time(possible_events_list, all_events):
 
         ## Compare all_events to times_in_range and suggest first time not 
         #  in times_in_range and not in all_events
@@ -311,7 +312,7 @@ def find_event_send_invitation():
 
         return suggested_event_time
 
-    def send_invites(user_objs_list, invitees, event):
+def send_invites(user_objs_list, invitees, event):
 
         # add to invites table
 
@@ -325,7 +326,9 @@ def find_event_send_invitation():
 
             db.session.add(new_invite)
             db.session.commit()
-
+        for i in invites: 
+            if isinstance(i, object):
+                print("wwwwooooooowwwww", i)
 
         invited = []
 
@@ -358,10 +361,16 @@ def find_event_send_invitation():
         flash(message)
         return render_template("homepage.html")
 
+
+@app.route("/invitation", methods=["POST"])
+def find_event_send_invitation():
+    """ Create event and invitations to event with suggested event time, based 
+        on user inputs and prioirity users' schedule."""
+
     # get emails and usernames from invite.html  
     priority_users = request.form.get("priority_users").split(",")
 
-    user_objects = get_user_objects_from_priority_users_list(priority_users)
+    user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
 
     all_events = get_events_from_user_objects(user_objects)
 
@@ -375,9 +384,9 @@ def find_event_send_invitation():
     # get intended duration of event
     duration = request.form["duration"]
 
-    all_time_in_range = get_all_time_in_range_from_duration(duration)
+    all_time_in_range = get_all_time_in_range_from_duration(duration, start_times)
 
-    suggested_event_time = suggested_event_time(all_time_in_range)
+    suggested_event_time = suggested_event_time(all_time_in_range, all_events)
     
     event_name = request.form["event name"]
     event_description = request.form["description"]
@@ -508,41 +517,31 @@ def priority_user_declined_invite():
 
     # get event obj
     e_obj = Event.query.filter_by(id=e_id).first()
-    print("aaaaaaaaaaaaaa", e_id)
+
     #get list of all Invited objects (all invites related to event). 
     invite_ids = request.form.get("inv_ids")
-    print("AHHHHHH", invite_ids)
-
-
-
-    # FIIIIIIIIXXXXXX invites ids/objs omg
-
-
 
     le = literal_eval(invite_ids)
-    print(le)
+
+    invite_objs = [Invited.query.filter_by(id=int(inv_id)).all() for inv_id in le]
 
     #why'd you decline bro?
     reason = request.form.get("reason")
-    print(reason)
 
-    invite_objs = [Invited.query.get(inv_id) for inv_id in invite_ids]
-
+    
     if reason == "new_time":
         p_users = []
         non_p_users = []
+        all_inv_objs = []
 
         for i in invite_objs:
-            i = i[1,-1]
-            print(i)
-            if i.is_priority == True:
-                p_users.append(i) 
-            elif i.is_priority == False:
-                non_p_users.append(i) 
+            all_inv_objs.append(i[0])
+            if i[0].is_priority == True:
+                p_users.append(i[0]) 
+            elif i[0].is_priority == False:
+                non_p_users.append(i[0]) 
 
-        user_objects = get_user_objects_from_priority_users_list(p_users)
-
-        all_events = get_events_from_user_objects(user_objects)
+        all_events = get_events_from_user_objects(p_users)
 
         # ensure the event time that is declined is added to event list so, the 
         # user doesn't run into the same issue.
@@ -559,9 +558,9 @@ def priority_user_declined_invite():
         # get intended duration of event
         duration = e_obj.duration
 
-        all_time_in_range = get_all_time_in_range_from_duration(duration)
+        all_time_in_range = get_all_time_in_range_from_duration(duration, start_times)
 
-        suggested_event_time = suggested_event_time(all_time_in_range)
+        suggested_event_time = suggested_event_time(all_time_in_range, all_events)
 
         name = e_obj.name
         description = e_obj.description
@@ -587,7 +586,7 @@ def priority_user_declined_invite():
         db.session.commit()
 
     elif reason == "not_priority":
-        for i in inv_objs:
+        for i in all_inv_objs:
                 if i.user_id == session['user_id']:
                     if i.is_priority == True:
                         i.is_priority = False
