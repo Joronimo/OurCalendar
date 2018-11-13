@@ -112,16 +112,17 @@ def get_user_objs_from_priority_users_list_recursive(p_users_list):
         """ by inputing the list of users for an event, this will clean the list 
             and return a new list of user objects per user. Or return an error 
             if the host input a name in an error.""" 
+        user_objects = []
 
         for p in p_users_list: 
             if isinstance(p, list):
                 get_user_objs_from_priority_users_list_recursive(p)
             else:
-                user_objects = []
                # convert user's email/username into a user object stored in user_object list
                 p = p.replace(" ", "")
-                if "@" in a:   
+                if "@" in p:   
                     user = User.query.filter_by(email=p).first()
+                    print(user)
                     user_objects.append(user)
                 else:
                     user = User.query.filter_by(username=p).first()
@@ -247,7 +248,7 @@ def get_listed_timeline_intervals_of_qtr_hr(timeline):
 
         return start_times
 
-def get_all_time_in_range_from_duration(duration, start_times):
+def get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times):
         """ accounting for the length of the meeting == duration. And accounting
             for the time of day the host would like the meeting to take place.
             Return a list of times the meeting is able to take place."""
@@ -284,38 +285,50 @@ def get_all_time_in_range_from_duration(duration, start_times):
             all_time_in_range.append((i, i + duration))
 
         ## remove all_time outside of user input time of day
-        no_earlier = request.form["no earlier than"]
-        no_later = request.form["no later than"]
+        no_earlier = no_earlier
+        no_later = no_later
 
         all_time_in_range = [(dt, dt2) for dt, dt2 in all_time_in_range 
                               if dt.hour > int(no_earlier) and dt2.hour < int(no_later)]
 
         return all_time_in_range
 
-def suggeted_event_time(possible_events_list, all_events):
+def suggest_event_time(possible_events_list, all_events):
+        """ Compare all_events to times_in_range and suggest first time not 
+            in times_in_range and not in all_events
+        """
 
-        ## Compare all_events to times_in_range and suggest first time not 
-        #  in times_in_range and not in all_events
+        all_events = set(all_events)
+        time_range = set(possible_events_list)
 
-        available_times = []
+        #if event is in time_range remove it. 
+        time_range = time_range - all_events
+
+        bad_times = []
 
         for event in all_events:
-            for time in possible_events_list:
-                if event[1] < time[0]:
-                    available_times.append((time[0],time[1]))      
-                else:
-                    if time[0] < event[0] or time[0] < event[1]:
-                        if time[1] <event[0] or time[1] < event[1]:
-                            available_times.append((time[0],time[1]))
+            for time in time_range:
+                if event[0] <= time[0] < event[1]:
+                    bad_times.append(time)
+                elif event[0] < time[1] <= event[1]:
+                    bad_times.append(time) 
 
-        suggested_event_time = available_times[0]
+        # get ride of that bad shit            
+        time_range = time_range - set(bad_times)
+
+        # need to index time_range
+        time_range = list(time_range)
+
+        #clean list so that the first index will be the earliest time.
+        time_range.sort(key=lambda tup: tup[0])
+
+        suggested_event_time = time_range[0]
 
         return suggested_event_time
 
 def send_invites(user_objs_list, invitees, event):
-
-        # add to invites table
-
+        """invite all users to the event."""
+        event = event
         # user_objects at the top of function. Priority users.
         for invitee in user_objs_list:
 
@@ -326,21 +339,24 @@ def send_invites(user_objs_list, invitees, event):
 
             db.session.add(new_invite)
             db.session.commit()
-        for i in invites: 
-            if isinstance(i, object):
-                print("wwwwooooooowwwww", i)
 
         invited = []
+        print(invitees)
 
         # convert user's email or username into user's id 
         for i in invitees:
             i = i.replace(" ", "")
+            print("replace", i)
             if "@" in i:   
                 user = User.query.filter_by(email=i).first()
+                print("user", user)
                 invited.append(user.id)
-            else:
+            elif "@" not in i:
                 user = User.query.filter_by(username=i).first()
+                print("user", user)
                 invited.append(user.id)
+            else: 
+                invited.append(i.id)
 
         for i in invited:
             invite = Invited(user_id=i,
@@ -357,9 +373,7 @@ def send_invites(user_objs_list, invitees, event):
         db.session.add(host_invite)
         db.session.commit()
 
-        message = Markup("Your invitations have been sent and the event has been added to your calendar.")
-        flash(message)
-        return render_template("homepage.html")
+        return True
 
 
 @app.route("/invitation", methods=["POST"])
@@ -371,7 +385,12 @@ def find_event_send_invitation():
     priority_users = request.form.get("priority_users").split(",")
 
     user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
+    host = User.query.filter_by(id=session["user_id"]).first()
+    user_objects.append(host)
+    print(user_objects)
 
+    # compile start and end times of each priority users events for comparison 
+    ## with all_time_in_range.
     all_events = get_events_from_user_objects(user_objects)
 
     start = get_start_time()
@@ -384,12 +403,20 @@ def find_event_send_invitation():
     # get intended duration of event
     duration = request.form["duration"]
 
-    all_time_in_range = get_all_time_in_range_from_duration(duration, start_times)
+    # time of day event should be within
+    no_earlier = request.form["no earlier than"]
+    no_later = request.form["no later than"]
 
-    suggested_event_time = suggested_event_time(all_time_in_range, all_events)
+    # time in quarter hour intervals from within the range of input duration
+    all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
+
+    suggested_event_time = suggest_event_time(all_time_in_range, all_events)
     
     event_name = request.form["event name"]
     event_description = request.form["description"]
+
+    # get intended duration of event
+    duration = request.form["duration"]
 
     # add event to Event table, as a deactivated event.
     event = Event(host=session["user_id"], 
@@ -398,14 +425,21 @@ def find_event_send_invitation():
                   start_time=suggested_event_time[0],
                   end_time=suggested_event_time[1],
                   timeline=timeline,
-                  duration=duration
+                  duration=duration,
+                  ealier=no_earlier,
+                  later=no_later
                   )
     db.session.add(event)
     db.session.commit()
 
     invitees = request.form.get("invitees").split(',')
+    print(invitees)
 
-    send_invites(user_objects, invites, event)
+    send_invites(user_objects, invitees, event)
+
+    message = Markup("Your invitations have been sent and the event has been added to your calendar.")
+    flash(message)
+    return render_template("homepage.html")
 
 
 @app.route('/inbox')
@@ -436,8 +470,6 @@ def notifications():
     message = Markup("You have no invitations at this time.")
     flash(message)
     return render_template("homepage.html")
-
-
 
 @app.route("/process-invitation", methods=["POST"])
 def process_invitation():
@@ -548,10 +580,8 @@ def priority_user_declined_invite():
         all_events.append((e_obj.start_time, e_obj.end_time))
 
         start = get_start_time()
-        print(start)
 
         timeline = e_obj.timeline
-        print(timeline)
 
         start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
 
@@ -560,20 +590,24 @@ def priority_user_declined_invite():
 
         all_time_in_range = get_all_time_in_range_from_duration(duration, start_times)
 
-        suggested_event_time = suggested_event_time(all_time_in_range, all_events)
+        suggested_event_time = suggest_event_time(all_time_in_range, all_events)
 
         name = e_obj.name
         description = e_obj.description
         host = e_obj.host
+        no_earlier = e_obj.ealier
+        no_later = e_obj.later
 
         # add event to Event table, as a deactivated event.
-        event = Event(host=session["user_id"], 
+        event = Event(host=host, 
                       name=name, 
                       description=description,
                       start_time=suggested_event_time[0],
                       end_time=suggested_event_time[1],
                       timeline=timeline,
-                      duration=duration
+                      duration=duration,
+                      ealier=no_ealier,
+                      later=no_later
                       )
         db.session.add(event)
         db.session.commit()
