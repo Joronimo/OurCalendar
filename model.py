@@ -72,6 +72,8 @@ class Event(db.Model):
     end_time = db.Column(db.DateTime)
     timeline = db.Column(db.String(86), nullable=True)
     duration = db.Column(db.String(86), nullable=True)
+    ealier = db.Column(db.String(86), nullable=True)
+    later = db.Column(db.String(86), nullable=True)
     users = db.relationship("Invited", back_populates="event")
 
     def __repr__(self):
