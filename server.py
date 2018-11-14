@@ -120,9 +120,12 @@ def get_user_objs_from_priority_users_list_recursive(p_users_list):
             else:
                # convert user's email/username into a user object stored in user_object list
                 p = p.replace(" ", "")
+                p = p.replace("\r\n", "")
+                p = p.replace("\r", "")
+                p = p.replace("\n", "")
+
                 if "@" in p:   
                     user = User.query.filter_by(email=p).first()
-                    print(user)
                     user_objects.append(user)
                 else:
                     user = User.query.filter_by(username=p).first()
@@ -326,52 +329,112 @@ def suggest_event_time(possible_events_list, all_events):
 
         return suggested_event_time
 
-def send_invites(user_objs_list, invitees, event):
+def send_invites(user_objs_list, invitees, event, host):
         """invite all users to the event."""
+
         event = event
-        # user_objects at the top of function. Priority users.
-        for invitee in user_objs_list:
-
-            new_invite = Invited(user_id=invitee.id,
-                            event_id=event.id,
-                            is_priority=True
-                            )
-
-            db.session.add(new_invite)
-            db.session.commit()
 
         invited = []
-        print(invitees)
 
-        # convert user's email or username into user's id 
+        #ensure user_objs_list is a list of objects and then send priority invites.
+        for i in user_objs_list:
+            if type(i) is str:
+
+                i = i.replace(" ", "")
+                i = i.replace("\r\n", "")
+                i = i.replace("\r", "")
+                i = i.replace("\n", "")
+
+                if "@" in i:   
+                    user = User.query.filter_by(email=i).first()
+                    u_id = user.id
+                    new_invite = Invited(user_id=u_id,
+                                         event_id=event.id,
+                                         is_priority=True
+                                        )
+                    db.session.add(new_invite)
+                    db.session.commit()
+
+                else:
+                    user = User.query.filter_by(username=i).first()
+                    u_id = user.id
+                    new_invite = Invited(user_id=u_id,
+                                         event_id=event.id,
+                                         is_priority=True
+                                        )
+                    db.session.add(new_invite)
+                    db.session.commit()
+
+            elif type(i) is Invited:
+                new_invite = Invited(user_id=i.user_id,
+                                     event_id=event.id,
+                                     is_priority=True
+                                    )
+                db.session.add(new_invite)
+                db.session.commit()
+
+            elif type(i) is User:
+                new_invite = Invited(user_id=i.id,
+                                     event_id=event.id,
+                                     is_priority=True
+                                    )
+                db.session.add(new_invite)
+                db.session.commit()
+            else:
+                print("this isn't working 1........")
+
+
+        #ensure invitees is a list of objects and then send non-priority invites 
         for i in invitees:
-            i = i.replace(" ", "")
-            print("replace", i)
-            if "@" in i:   
-                user = User.query.filter_by(email=i).first()
-                print("user", user)
-                invited.append(user.id)
-            elif "@" not in i:
-                user = User.query.filter_by(username=i).first()
-                print("user", user)
-                invited.append(user.id)
-            else: 
-                invited.append(i.id)
+            if type(i) is str:
 
-        for i in invited:
-            invite = Invited(user_id=i,
-                            event_id=event.id)
-            db.session.add(invite)
-            db.session.commit()
+                i = i.replace(" ", "")
+                i = i.replace("\r\n", "")
+                i = i.replace("\r", "")
+                i = i.replace("\n", "")
+
+                if "@" in i:   
+                    user = User.query.filter_by(email=i).first()
+                    u_id = user.id
+                    new_invite = Invited(user_id=u_id,
+                                         event_id=event.id
+                                        )
+                    db.session.add(new_invite)
+                    db.session.commit()
+
+                else:
+                    user = User.query.filter_by(username=i).first()
+                    u_id = user.id
+                    new_invite = Invited(user_id=u_id,
+                                         event_id=event.id                                        )
+                    db.session.add(new_invite)
+                    db.session.commit()
+
+            elif type(i) is Invited:
+                new_invite = Invited(user_id=i.user_id,
+                                     event_id=event.id
+                                    )
+                db.session.add(new_invite)
+                db.session.commit()
+
+            elif type(i) is User:
+                new_invite = Invited(user_id=i.id,
+                                     event_id=event.id,
+                                     is_priority=True
+                                    )
+                db.session.add(new_invite)
+                db.session.commit()
+            else:
+                print("this isn't working 2........")
+
 
         #add invite to host's invited collumn and event render
-        host = session["user_id"]
-        host_invite = Invited(user_id=host,
-                                  event_id=event.id,
-                                  is_priority=True,
-                                  is_accepted=True)
-        db.session.add(host_invite)
-        db.session.commit()
+        host_invites = Invited.query.filter_by(user_id=host).all()
+        for i in host_invites:
+            if i.event_id == event.id:
+                i.is_priority = True
+                i.is_accepted = True                    
+                db.session.commit()
 
         return True
 
@@ -387,7 +450,6 @@ def find_event_send_invitation():
     user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
     host = User.query.filter_by(id=session["user_id"]).first()
     user_objects.append(host)
-    print(user_objects)
 
     # compile start and end times of each priority users events for comparison 
     ## with all_time_in_range.
@@ -433,14 +495,14 @@ def find_event_send_invitation():
     db.session.commit()
 
     invitees = request.form.get("invitees").split(',')
-    print(invitees)
 
-    send_invites(user_objects, invitees, event)
+    host = session["user_id"]
+
+    send_invites(user_objects, invitees, event, host)
 
     message = Markup("Your invitations have been sent and the event has been added to your calendar.")
     flash(message)
     return render_template("homepage.html")
-
 
 @app.route('/inbox')
 def notifications():
@@ -483,12 +545,15 @@ def process_invitation():
         message = Markup("Please mark either attend or decline.")
         flash(message)
         return render_template("invitation.html")
+
     elif responce == "yes":
-        #get all invites for this event
+        # get all priority user ids for the event
         invite_objs = Invited.query.filter_by(event_id=e_id).all()
-        #all priority user ids for the event
-        event_user_objs = []
+        
+        event_user_ids = []
+
         count_prioirty_users = 0
+
         for i in invite_objs:
             #if Invited user is session user
             if i.user_id == session["user_id"]:
@@ -496,18 +561,22 @@ def process_invitation():
                 db.session.commit()
 
             if i.is_priority == True:
-                event_user_objs.append(i.user_id)
-                for user in event_user_objs:
+                event_user_ids.append(i.user_id)
+
+                for user in event_user_ids:
                     if i.user_id == user:
+
                         #count if each priority user has accepted the invite
                         if i.is_priority == True and i.is_accepted == True:
                             count_prioirty_users += 1
-                            #if all priority user's have accepted change the 
+
+                            #if all priority user's have accepted, change the 
                             #event status to active
-                            if count_prioirty_users == len(event_user_objs):
+                            if count_prioirty_users == len(event_user_ids):
                                 event = Event.query.filter_by(id=e_id).first()
                                 event.is_active = True
                                 db.session.commit()
+
 
     elif responce == "no":
         #get all invites for this event
@@ -522,22 +591,10 @@ def process_invitation():
                     end_time = request.form.get("end_time")
                     return render_template("priority.html", 
                                             event_id=e_id,
-                                            inv_ids=inv_ids,
-                                            start_time=start_time,
-                                            end_time=end_time
-                                          )
-                # ask user if she would like to be removed as priority user to
-                # let event continue without her/him. Or look for a new time for
-                # the event to take place.
-                # if new event time ->
-                # -> cancel event and invites
-                # -> make a new event with same host and suggested_time[1]
-                # -> send new invites. 
+                                            inv_ids=inv_ids
+                                          ) 
     
-
-    message = Markup("You made it")
-    flash(message)
-    return render_template("homepage.html")
+    return render_template("inbox.html")
 
 @app.route("/assess-priority", methods=["POST"])
 def priority_user_declined_invite():
@@ -560,18 +617,20 @@ def priority_user_declined_invite():
     #why'd you decline bro?
     reason = request.form.get("reason")
 
+    #received from if, used in else statement
+    all_inv_objs = []
     
     if reason == "new_time":
         p_users = []
         non_p_users = []
-        all_inv_objs = []
+       
 
         for i in invite_objs:
             all_inv_objs.append(i[0])
             if i[0].is_priority == True:
                 p_users.append(i[0]) 
             elif i[0].is_priority == False:
-                non_p_users.append(i[0]) 
+                non_p_users.append(i[0])
 
         all_events = get_events_from_user_objects(p_users)
 
@@ -586,17 +645,17 @@ def priority_user_declined_invite():
         start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
 
         # get intended duration of event
-        duration = e_obj.duration
+        duration = e_obj.duration 
+        no_earlier = e_obj.ealier
+        no_later = e_obj.later
 
-        all_time_in_range = get_all_time_in_range_from_duration(duration, start_times)
+        all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
 
         suggested_event_time = suggest_event_time(all_time_in_range, all_events)
 
         name = e_obj.name
         description = e_obj.description
         host = e_obj.host
-        no_earlier = e_obj.ealier
-        no_later = e_obj.later
 
         # add event to Event table, as a deactivated event.
         event = Event(host=host, 
@@ -606,20 +665,27 @@ def priority_user_declined_invite():
                       end_time=suggested_event_time[1],
                       timeline=timeline,
                       duration=duration,
-                      ealier=no_ealier,
+                      ealier=no_earlier,
                       later=no_later
                       )
         db.session.add(event)
         db.session.commit()
 
-        send_invites(user_objects, non_p_users, event)
+        send_invites(p_users, non_p_users, event, host)
 
         #delete depricated event and invites.
-        Invited.delete().where(event_id=e_obj.id)
-        Event.delete().where(id=e_obj.id)
+        # db.session.query(Invited).filter(User.age == 25).delete(synchronize_session='fetch')
+        del_invites = Invited.query.filter_by(event_id=e_obj.id).all()
+        del_event = Event.query.filter_by(id=e_obj.id).first()
+        for i in del_invites:
+            db.session.delete(i)
+        db.session.delete(del_event)
         db.session.commit()
 
     elif reason == "not_priority":
+        all_inv_objs = []
+        for i in invite_objs:
+            all_inv_objs.append(i[0])
         for i in all_inv_objs:
                 if i.user_id == session['user_id']:
                     if i.is_priority == True:
@@ -630,10 +696,8 @@ def priority_user_declined_invite():
         message = Markup("You must select one of the options")
         flash(message)                      
         return render_template("priority.html")    
-
-    message = Markup("decline prcessed")
-    flash(message)                      
-    return render_template("homepage.html")
+                     
+    return render_template("inbox.html")
 
 
 
