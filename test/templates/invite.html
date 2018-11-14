@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="pill-nav">
+  <a class="active" href="/">Home</a>
+  <a href="/inbox">Notifications</a>    
+  <a href="/invite">Create Event</a>
+</div>
+
+
+<form action="/invitation" method="POST">
+  Title of Event:* <input type="text" name="event name">
+  <br>
+  <br>
+
+  This event CANNOT happen without the following users' confirmation:
+  <br>
+  <textarea rows="5" cols="40" placeholder="Enter email addresses or usernames separated by a comma" name="priority_users"></textarea>   
+  <br>
+  <br>
+
+  Other attendees: 
+  <br>
+  <textarea rows="5" cols="40" placeholder="Enter email addresses or usernames separated by a comma" name="invitees"></textarea>   
+  <br>
+  <br>
+
+  Event description: 
+  <br>
+  <textarea rows="5" cols="40" placeholder="description" name="description"></textarea>
+  <br>
+  <br>
+
+  How much time do you need?*
+  <br>
+  <select name="duration">
+    <option value="15">15 minutes</option>
+    <option value="30">30 minutes</option>
+    <option value="1">1 hour</option>
+    <option value="2">2 hours</option>
+    <option value="3">3 hours</option>
+    <option value="4">4 hours</option>
+    <option value="5">5 hours</option>
+    <option value="6">6 hours</option>
+    <option value="7">7 hours</option>
+    <option value="8">8 hours</option>
+  </select>
+  <br>
+  <br>
+
+  How soon would you like to host this event?*
+  <br>
+  <select name="timeline">
+    <option value="two weeks"> In the next two weeks</option>
+    <option value="month">In the next 30 days</option>
+    <option value="six months">In the next 6 months</option>
+    <option value="year">In the next year</option>
+  </select>
+  <br>
+  <br>
+
+  What time of day would you like this event to take place?  
+  <br>
+  <div>no earlier than
+    <select name="no earlier than">
+      <option value="1">1am</option> 
+      <option value="2">2am</option>
+      <option value="3">3am</option>
+      <option value="4">4am</option>  
+      <option value="5">5am</option>
+      <option value="6">6am</option> 
+      <option value="7">7am</option>
+      <option value="8">8am</option> 
+      <option value="9">9am</option>
+      <option value="10">10am</option> 
+      <option value="11">11am</option>
+      <option value="12">12am</option> 
+      <option value="13">1pm</option>
+      <option value="14">2pm</option> 
+      <option value="15">3pm</option>
+      <option value="16">4pm</option> 
+      <option value="17">5pm</option>
+      <option value="18">6pm</option> 
+      <option value="19">7pm</option>
+      <option value="20">8pm</option> 
+      <option value="21">9pm</option>
+      <option value="22">10pm</option> 
+      <option value="23">11pm</option>
+      <option value="24">12pm</option> 
+    </select> no later than
+    <select name="no later than"> 
+      <option value="1">1am</option> 
+      <option value="2">2am</option>
+      <option value="3">3am</option>
+      <option value="4">4am</option>  
+      <option value="5">5am</option>
+      <option value="6">6am</option> 
+      <option value="7">7am</option>
+      <option value="8">8am</option> 
+      <option value="9">9am</option>
+      <option value="10">10am</option> 
+      <option value="11">11am</option>
+      <option value="12">12am</option> 
+      <option value="13">1pm</option>
+      <option value="14">2pm</option> 
+      <option value="15">3pm</option>
+      <option value="16">4pm</option> 
+      <option value="17">5pm</option>
+      <option value="18">6pm</option> 
+      <option value="19">7pm</option>
+      <option value="20">8pm</option> 
+      <option value="21">9pm</option>
+      <option value="22">10pm</option> 
+      <option value="23">11pm</option>
+      <option value="24">12pm</option> 
+    </select>
+  </div>
+ <!--    
+  <option value="workday">9am-6pm Monday - Friday</option>
+  <option value="after work">6pm-11pm Monday - Friday</option>
+  <option value="any"> 9am-10pm 7days a week</option>
+  <option value="weekend">9am-11pm Weekends</option>
+  <option value="lunch"> 11am-3pm 7days a week</option>
+  <option value="breakfast"> 7am-11am 7days a week</option> -->
+  
+  <br>
+
+  <input type="submit">
+
+</form>
+
+
+
+{% endblock %}
