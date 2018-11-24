@@ -1,3 +1,20 @@
+"""Model and database functions for OurCalendar project"""
+
+from flask_sqlalchemy import SQLAlchemy
+
+# This is the connection to the PostgreSQL database; we're getting this through
+# the Flask-SQLAlchemy helper library. On this, we can find the `session`
+# object, where we do most of our interactions (like committing, etc.)
+
+db = SQLAlchemy()
+
+from flask_testing import TestCase
+
+from server import create_app, db
+
+import datetime
+
+
 def example_data():
     """Create some sample data."""
 
@@ -47,4 +64,30 @@ def example_data():
     db.session.add_all([u1, u2, u3, e1, e2, e3, iu1, iu2, iu3, iu4, iu5, iu6, iu7, iu8, iu9])
     db.session.commit()
 
+
+class FlaskTests(TestCase):
+
+    SQLALCHEMY_DATABASE_URI = 'postgresql:///calendar'
+    TESTING = True
+
+    def create_app(self):
+
+        self.client = app.test_client()
+        app.config['TESTING'] = True
+
+
+        return create_app(self)
+
+    def setUp(self):
+
+        
+        db.create_all()
+        example_data()
+
+    def tearDown(self):
+
+        db.session.remove()
+        db.drop_all()
+
+   
 
