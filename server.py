@@ -3,7 +3,7 @@
 from jinja2 import StrictUndefined
 
 from flask import (Flask, render_template, redirect, request, flash, session, 
-                   jsonify, Markup
+                   jsonify, Markup, Response
                    )
 import json
 
@@ -14,6 +14,8 @@ from model import connect_to_db, db, User, Event, Invited
 from datetime import timedelta, datetime, date
 
 from ast import literal_eval
+
+from calendar import calendar, monthrange
 
 
 app = Flask(__name__)
@@ -26,6 +28,8 @@ app.secret_key = "ABC"
 # error.
 app.jinja_env.undefined = StrictUndefined
 
+
+
 @app.route("/", methods=["GET", "POST"])
 def homepage():
     """Homepage."""
@@ -34,16 +38,22 @@ def homepage():
 
     if logout:
         session.clear()
+
         message = Markup("You have been successfully logged out.")
         flash(message)
 
-    return render_template("homepage.html")
+    date = datetime.now()
+    month_year = date.strftime("%B %Y")
+
+    return render_template("homepage.html", monthYear=month_year)
+
 
 @app.route("/login")
 def login():
     """Show login page to enter email and password."""
 
     return render_template("login.html")
+
 
 @app.route("/process-login", methods=["POST"])
 def processed_login():
@@ -59,9 +69,12 @@ def processed_login():
             session["user_id"] = is_user.id
             # welcome user by name
             name = is_user.name
+            date = datetime.now()
+            month_year = date.strftime("%B %Y")
+
             message = Markup(f"Welcome back, {name}.")
             flash(message)
-            return render_template("homepage.html")
+            return render_template("homepage.html", monthYear=month_year)
         else:
             message = Markup("password incorrect.")
             flash(message)
@@ -71,11 +84,13 @@ def processed_login():
         flash(message)
         return render_template("registration.html")
 
+
 @app.route("/registration")
 def registration():
     """Show registration page to enter email and password."""
 
     return render_template("registration.html")
+
 
 @app.route("/process-registration", methods=["POST"])
 def processed_registration():
@@ -93,13 +108,62 @@ def processed_registration():
         #activate session with user id set to variable 
         session["user_id"] = user.id
 
+        date = datetime.now()
+        month_year = date.strftime("%B %Y")
+
         message = Markup("You are now registered!")
         flash(message)
-        return render_template("homepage.html")
+        return render_template("homepage.html", monthYear=month_year)
     else:
         message = Markup("This email already exists in our database. Please, log in.")
         flash(message)
         return render_template("login.html")
+
+
+@app.route("/month-days", methods=["POST"])
+def get_session_user_month_events():
+    """for the month get all of the logged in user's events."""
+
+    data = request.data.decode("utf-8")
+    print("DATA:    ", data)
+    data = data.split(" ")
+    month_str = data[0]
+    year_str = data[1]
+    print(month_str)
+    print(year_str)
+
+    month_digit = month_str_to_digit(month_str)
+    
+    last_day_month = monthrange(int(year_str), month_digit)[1]
+    print(last_day_month)
+
+
+
+    # data=request.stream.read()
+    # print(data, request.data)
+    u_id = session["user_id"]
+
+
+    # day_num = get_number_of_days(month)
+
+    # response_data = {'day_num': day_num}
+
+    # invites = Invited.query.filter_by(user_id=u_id).all()
+
+    resp = Response(""+response_data, status=200, mimetype='application/json')
+    print(resp)
+    return resp
+    # print("ahhhhhhhhhhh", list_month_year)
+
+    # invites = Invited.query.filter_by(user_id=u_id).all()
+
+    # # for i in invites:
+    # #     if is_declined == False:
+
+    # date = datetime.now()
+    # month_year = date.strftime("%B %Y")
+
+    # return render_template("homepage.html", monthYear=month_year) 
 
 
 @app.route("/invite")
@@ -107,6 +171,307 @@ def create_invite():
     """Allows logged in user to create and send an invite to guests to attend an event."""
 
     return render_template("invite.html")
+
+@app.route("/invitation", methods=["POST"])
+def find_event_send_invitation():
+    """ Create event and invitations to event with suggested event time, based 
+        on user inputs and prioirity users' schedule."""
+
+    # get emails and usernames from invite.html  
+    priority_users = request.form.get("priority_users").split(",")
+
+    user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
+    host = User.query.filter_by(id=session["user_id"]).first()
+    user_objects.append(host)
+
+    # compile start and end times of each priority users events for comparison 
+    ## with all_time_in_range.
+    all_events = get_events_from_user_objects(user_objects)
+
+    start = get_start_time()
+
+    # how soon event should take place  
+    timeline = request.form["timeline"]
+
+    start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
+
+    # get intended duration of event
+    duration = request.form["duration"]
+
+    # time of day event should be within
+    no_earlier = request.form["no earlier than"]
+    no_later = request.form["no later than"]
+
+    # time in quarter hour intervals from within the range of input duration
+    all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
+
+    suggested_event_time = suggest_event_time(all_time_in_range, all_events)
+    
+    event_name = request.form["event name"]
+    event_description = request.form["description"]
+
+    # get intended duration of event
+    duration = request.form["duration"]
+
+    # add event to Event table, as a deactivated event.
+    event = Event(host=session["user_id"], 
+                  name=event_name, 
+                  description=event_description,
+                  start_time=suggested_event_time[0],
+                  end_time=suggested_event_time[1],
+                  timeline=timeline,
+                  duration=duration,
+                  ealier=no_earlier,
+                  later=no_later
+                  )
+    db.session.add(event)
+    db.session.commit()
+
+    invitees = request.form.get("invitees").split(',')
+
+    host = session["user_id"]
+
+    send_invites(user_objects, invitees, event, host)
+
+    date = datetime.now()
+    month_year = date.strftime("%B %Y")
+
+    message = Markup("Your invitations have been sent and the event has been added to your calendar.")
+    flash(message)
+    return render_template("homepage.html", monthYear=month_year)
+
+
+@app.route('/inbox')
+def notifications():
+    """
+       Render invitation if user has an unanswered invitation or send them to 
+       the mainpage if not.
+    """
+    invites = Invited.query.filter_by(user_id=session["user_id"]).all()
+
+    for i in invites:
+        if i.is_declined == False and i.is_accepted == False:
+                #get event info with i.id
+                event = Event.query.filter_by(id=i.event_id).first()
+                name = event.name
+                description = event.description
+                start = event.start_time.strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
+                end = event.end_time.strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
+                e_id = event.id
+                return render_template("invitation.html", 
+                                       event_name=name, 
+                                       event_description=description,
+                                       start_time=start,
+                                       end_time=end,
+                                       event_id=e_id
+                                       )
+    date = datetime.now()
+    month_year = date.strftime("%B %Y")
+
+    message = Markup("You have no invitations at this time.")
+    flash(message)
+    return render_template("homepage.html", monthYear=month_year)
+
+
+@app.route("/process-invitation", methods=["POST"])
+def process_invitation():
+    """process user input (accept or decline) of event invititation"""
+    
+    responce = request.form.get('attend')
+    e_id = request.form.get("event_id")
+
+    #handling the responce
+    if responce == None:
+        message = Markup("Please mark either attend or decline.")
+        flash(message)
+        return render_template("invitation.html")
+
+    elif responce == "yes":
+        # get all priority user ids for the event
+        invite_objs = Invited.query.filter_by(event_id=e_id).all()
+        
+        event_user_ids = []
+
+        count_prioirty_users = 0
+
+        for i in invite_objs:
+            #if Invited user is session user
+            if i.user_id == session["user_id"]:
+                i.is_accepted = True
+                db.session.commit()
+
+            if i.is_priority == True:
+                event_user_ids.append(i.user_id)
+
+                for user in event_user_ids:
+                    if i.user_id == user:
+
+                        #count if each priority user has accepted the invite
+                        if i.is_priority == True and i.is_accepted == True:
+                            count_prioirty_users += 1
+
+                            #if all priority user's have accepted, change the 
+                            #event status to active
+                            if count_prioirty_users == len(event_user_ids):
+                                event = Event.query.filter_by(id=e_id).first()
+                                event.is_active = True
+                                db.session.commit()
+
+
+    elif responce == "no":
+        #get all invites for this event
+        invite_objs = Invited.query.filter_by(event_id=e_id).all()
+
+        inv_ids = [invite.id for invite in invite_objs]
+
+        for i in invite_objs:
+            if i.user_id == session['user_id']:
+                if i.is_priority == True:
+                    start_time = request.form.get("start_time")
+                    end_time = request.form.get("end_time")
+                    return render_template("priority.html", 
+                                            event_id=e_id,
+                                            inv_ids=inv_ids
+                                          ) 
+    
+    return render_template("inbox.html")
+
+
+@app.route("/assess-priority", methods=["POST"])
+def priority_user_declined_invite():
+    """assessesing the reson why a priority user delined an invite and 
+       responding accordingly."""
+
+    #get event id from form.
+    e_id = request.form.get("event_id")
+
+    # get event obj
+    e_obj = Event.query.filter_by(id=e_id).first()
+
+    #get list of all Invited objects (all invites related to event). 
+    invite_ids = request.form.get("inv_ids")
+
+    le = literal_eval(invite_ids)
+
+    invite_objs = [Invited.query.filter_by(id=int(inv_id)).all() for inv_id in le]
+
+    #why'd you decline bro?
+    reason = request.form.get("reason")
+
+    #received from if, used in else statement
+    all_inv_objs = []
+    
+    if reason == "new_time":
+        p_users = []
+        non_p_users = []
+       
+
+        for i in invite_objs:
+            all_inv_objs.append(i[0])
+            if i[0].is_priority == True:
+                p_users.append(i[0]) 
+            elif i[0].is_priority == False:
+                non_p_users.append(i[0])
+
+        all_events = get_events_from_user_objects(p_users)
+
+        # ensure the event time that is declined is added to event list so, the 
+        # user doesn't run into the same issue.
+        all_events.append((e_obj.start_time, e_obj.end_time))
+
+        start = get_start_time()
+
+        timeline = e_obj.timeline
+
+        start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
+
+        # get intended duration of event
+        duration = e_obj.duration 
+        no_earlier = e_obj.ealier
+        no_later = e_obj.later
+
+        all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
+
+        suggested_event_time = suggest_event_time(all_time_in_range, all_events)
+
+        name = e_obj.name
+        description = e_obj.description
+        host = e_obj.host
+
+        # add event to Event table, as a deactivated event.
+        event = Event(host=host, 
+                      name=name, 
+                      description=description,
+                      start_time=suggested_event_time[0],
+                      end_time=suggested_event_time[1],
+                      timeline=timeline,
+                      duration=duration,
+                      ealier=no_earlier,
+                      later=no_later
+                      )
+        db.session.add(event)
+        db.session.commit()
+
+        send_invites(p_users, non_p_users, event, host)
+
+        #delete depricated event and invites.
+        # db.session.query(Invited).filter(User.age == 25).delete(synchronize_session='fetch')
+        del_invites = Invited.query.filter_by(event_id=e_obj.id).all()
+        del_event = Event.query.filter_by(id=e_obj.id).first()
+        for i in del_invites:
+            db.session.delete(i)
+        db.session.delete(del_event)
+        db.session.commit()
+
+    elif reason == "not_priority":
+        all_inv_objs = []
+        for i in invite_objs:
+            all_inv_objs.append(i[0])
+        for i in all_inv_objs:
+                if i.user_id == session['user_id']:
+                    if i.is_priority == True:
+                        i.is_priority = False
+                        i.is_declined = True
+                        db.session.commit()
+    else:
+        message = Markup("You must select one of the options")
+        flash(message)                      
+        return render_template("priority.html")    
+                     
+
+
+    return render_template("inbox.html")
+
+
+@app.route('/events')
+def load_user_events():
+
+    u_id = session["User"]
+
+    #get user's invites
+    #get user's events data. 
+    #if invite not accepted color = grey
+    #if invite declined do not display. 
+
+
+
+
+@app.route('/data')
+def return_data():
+    start_date = request.args.get('start', '')
+    end_date = request.args.get('end', '')
+    # You'd normally use the variables above to limit the data returned
+    # you don't want to return ALL events like in this code
+    # but since no db or any real storage is implemented I'm just
+    # returning data from a text file that contains json elements
+
+    with open("events.json", "r") as input_data:
+        # you should use something else here than just plaintext
+        # check out jsonfiy method or the built in json module
+        # http://flask.pocoo.org/docs/0.10/api/#module-flask.json
+        return input_data.read()
+
+
 
 def get_user_objs_from_priority_users_list_recursive(p_users_list):
         """ by inputing the list of users for an event, this will clean the list 
@@ -140,6 +505,7 @@ def get_user_objs_from_priority_users_list_recursive(p_users_list):
 
         return user_objects
 
+
 def get_events_from_user_objects(u_objs):
         """ using the list of user objects, create a list of tuples where the
             start and end tuple is the duration of each event."""
@@ -164,6 +530,7 @@ def get_events_from_user_objects(u_objs):
                     all_events.append(tup_of_event)
 
         return all_events
+
 
 def get_start_time():
         """ rounds up the current time to the nearest quarter hour"""
@@ -190,6 +557,7 @@ def get_start_time():
             return start
         else:
             return start
+
 
 def get_listed_timeline_intervals_of_qtr_hr(timeline):
         """ using the timeline input by user, break that down into quarter hour 
@@ -251,6 +619,7 @@ def get_listed_timeline_intervals_of_qtr_hr(timeline):
 
         return start_times
 
+
 def get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times):
         """ accounting for the length of the meeting == duration. And accounting
             for the time of day the host would like the meeting to take place.
@@ -296,6 +665,7 @@ def get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_ti
 
         return all_time_in_range
 
+
 def suggest_event_time(possible_events_list, all_events):
         """ Compare all_events to times_in_range and suggest first time not 
             in times_in_range and not in all_events
@@ -328,6 +698,7 @@ def suggest_event_time(possible_events_list, all_events):
         suggested_event_time = time_range[0]
 
         return suggested_event_time
+
 
 def send_invites(user_objs_list, invitees, event, host):
         """invite all users to the event."""
@@ -438,283 +809,34 @@ def send_invites(user_objs_list, invitees, event, host):
 
         return True
 
+def month_str_to_digit(month_str):
+        #convert month into a integer
+        if month_str == "January":
+            month_str = 1
+        elif month_str  == "February":
+            month_str = 2
+        elif month_str == "March":
+            month_str = 3
+        elif month_str == "April":
+            month_str = 4
+        elif month_str == "May":
+            month_str = 5
+        elif month_str == "June":
+            month_str = 6
+        elif month_str == "July":
+            month_str = 7
+        elif month_str == "August":
+            month_str = 8
+        elif month_str == "September":
+            month_str = 9
+        elif month_str == "October":
+            month_str = 10
+        elif month_str == "November":
+            month_str = 11
+        elif month_str == "December":
+            month_str = 12
 
-@app.route("/invitation", methods=["POST"])
-def find_event_send_invitation():
-    """ Create event and invitations to event with suggested event time, based 
-        on user inputs and prioirity users' schedule."""
-
-    # get emails and usernames from invite.html  
-    priority_users = request.form.get("priority_users").split(",")
-
-    user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
-    host = User.query.filter_by(id=session["user_id"]).first()
-    user_objects.append(host)
-
-    # compile start and end times of each priority users events for comparison 
-    ## with all_time_in_range.
-    all_events = get_events_from_user_objects(user_objects)
-
-    start = get_start_time()
-
-    # how soon event should take place  
-    timeline = request.form["timeline"]
-
-    start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
-
-    # get intended duration of event
-    duration = request.form["duration"]
-
-    # time of day event should be within
-    no_earlier = request.form["no earlier than"]
-    no_later = request.form["no later than"]
-
-    # time in quarter hour intervals from within the range of input duration
-    all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
-
-    suggested_event_time = suggest_event_time(all_time_in_range, all_events)
-    
-    event_name = request.form["event name"]
-    event_description = request.form["description"]
-
-    # get intended duration of event
-    duration = request.form["duration"]
-
-    # add event to Event table, as a deactivated event.
-    event = Event(host=session["user_id"], 
-                  name=event_name, 
-                  description=event_description,
-                  start_time=suggested_event_time[0],
-                  end_time=suggested_event_time[1],
-                  timeline=timeline,
-                  duration=duration,
-                  ealier=no_earlier,
-                  later=no_later
-                  )
-    db.session.add(event)
-    db.session.commit()
-
-    invitees = request.form.get("invitees").split(',')
-
-    host = session["user_id"]
-
-    send_invites(user_objects, invitees, event, host)
-
-    message = Markup("Your invitations have been sent and the event has been added to your calendar.")
-    flash(message)
-    return render_template("homepage.html")
-
-@app.route('/inbox')
-def notifications():
-    """
-       Render invitation if user has an unanswered invitation or send them to 
-       the mainpage if not.
-    """
-    invites = Invited.query.filter_by(user_id=session["user_id"]).all()
-
-    for i in invites:
-        if i.is_declined == False and i.is_accepted == False:
-                #get event info with i.id
-                event = Event.query.filter_by(id=i.event_id).first()
-                name = event.name
-                description = event.description
-                start = event.start_time.strftime("%A, the %d of %B, %Y. Starting at %I:%M%p")
-                end = event.end_time.strftime("%A, the %d of %B, %Y. Ending at %I:%M%p")
-                e_id = event.id
-                return render_template("invitation.html", 
-                                       event_name=name, 
-                                       event_description=description,
-                                       start_time=start,
-                                       end_time=end,
-                                       event_id=e_id
-                                       )
-
-    message = Markup("You have no invitations at this time.")
-    flash(message)
-    return render_template("homepage.html")
-
-@app.route("/process-invitation", methods=["POST"])
-def process_invitation():
-    """process user input (accept or decline) of event invititation"""
-    
-    responce = request.form.get('attend')
-    e_id = request.form.get("event_id")
-
-    #handling the responce
-    if responce == None:
-        message = Markup("Please mark either attend or decline.")
-        flash(message)
-        return render_template("invitation.html")
-
-    elif responce == "yes":
-        # get all priority user ids for the event
-        invite_objs = Invited.query.filter_by(event_id=e_id).all()
-        
-        event_user_ids = []
-
-        count_prioirty_users = 0
-
-        for i in invite_objs:
-            #if Invited user is session user
-            if i.user_id == session["user_id"]:
-                i.is_accepted = True
-                db.session.commit()
-
-            if i.is_priority == True:
-                event_user_ids.append(i.user_id)
-
-                for user in event_user_ids:
-                    if i.user_id == user:
-
-                        #count if each priority user has accepted the invite
-                        if i.is_priority == True and i.is_accepted == True:
-                            count_prioirty_users += 1
-
-                            #if all priority user's have accepted, change the 
-                            #event status to active
-                            if count_prioirty_users == len(event_user_ids):
-                                event = Event.query.filter_by(id=e_id).first()
-                                event.is_active = True
-                                db.session.commit()
-
-
-    elif responce == "no":
-        #get all invites for this event
-        invite_objs = Invited.query.filter_by(event_id=e_id).all()
-
-        inv_ids = [invite.id for invite in invite_objs]
-
-        for i in invite_objs:
-            if i.user_id == session['user_id']:
-                if i.is_priority == True:
-                    start_time = request.form.get("start_time")
-                    end_time = request.form.get("end_time")
-                    return render_template("priority.html", 
-                                            event_id=e_id,
-                                            inv_ids=inv_ids
-                                          ) 
-    
-    return render_template("inbox.html")
-
-@app.route("/assess-priority", methods=["POST"])
-def priority_user_declined_invite():
-    """assessesing the reson why a priority user delined an invite and 
-       responding accordingly."""
-
-    #get event id from form.
-    e_id = request.form.get("event_id")
-
-    # get event obj
-    e_obj = Event.query.filter_by(id=e_id).first()
-
-    #get list of all Invited objects (all invites related to event). 
-    invite_ids = request.form.get("inv_ids")
-
-    le = literal_eval(invite_ids)
-
-    invite_objs = [Invited.query.filter_by(id=int(inv_id)).all() for inv_id in le]
-
-    #why'd you decline bro?
-    reason = request.form.get("reason")
-
-    #received from if, used in else statement
-    all_inv_objs = []
-    
-    if reason == "new_time":
-        p_users = []
-        non_p_users = []
-       
-
-        for i in invite_objs:
-            all_inv_objs.append(i[0])
-            if i[0].is_priority == True:
-                p_users.append(i[0]) 
-            elif i[0].is_priority == False:
-                non_p_users.append(i[0])
-
-        all_events = get_events_from_user_objects(p_users)
-
-        # ensure the event time that is declined is added to event list so, the 
-        # user doesn't run into the same issue.
-        all_events.append((e_obj.start_time, e_obj.end_time))
-
-        start = get_start_time()
-
-        timeline = e_obj.timeline
-
-        start_times = get_listed_timeline_intervals_of_qtr_hr(timeline)
-
-        # get intended duration of event
-        duration = e_obj.duration 
-        no_earlier = e_obj.ealier
-        no_later = e_obj.later
-
-        all_time_in_range = get_all_time_in_range_from_duration(no_earlier, no_later, duration, start_times)
-
-        suggested_event_time = suggest_event_time(all_time_in_range, all_events)
-
-        name = e_obj.name
-        description = e_obj.description
-        host = e_obj.host
-
-        # add event to Event table, as a deactivated event.
-        event = Event(host=host, 
-                      name=name, 
-                      description=description,
-                      start_time=suggested_event_time[0],
-                      end_time=suggested_event_time[1],
-                      timeline=timeline,
-                      duration=duration,
-                      ealier=no_earlier,
-                      later=no_later
-                      )
-        db.session.add(event)
-        db.session.commit()
-
-        send_invites(p_users, non_p_users, event, host)
-
-        #delete depricated event and invites.
-        # db.session.query(Invited).filter(User.age == 25).delete(synchronize_session='fetch')
-        del_invites = Invited.query.filter_by(event_id=e_obj.id).all()
-        del_event = Event.query.filter_by(id=e_obj.id).first()
-        for i in del_invites:
-            db.session.delete(i)
-        db.session.delete(del_event)
-        db.session.commit()
-
-    elif reason == "not_priority":
-        all_inv_objs = []
-        for i in invite_objs:
-            all_inv_objs.append(i[0])
-        for i in all_inv_objs:
-                if i.user_id == session['user_id']:
-                    if i.is_priority == True:
-                        i.is_priority = False
-                        i.is_declined = True
-                        db.session.commit()
-    else:
-        message = Markup("You must select one of the options")
-        flash(message)                      
-        return render_template("priority.html")    
-                     
-
-
-    return render_template("inbox.html")
-
-@app.route('/data')
-def return_data():
-    start_date = request.args.get('start', '')
-    end_date = request.args.get('end', '')
-    # You'd normally use the variables above to limit the data returned
-    # you don't want to return ALL events like in this code
-    # but since no db or any real storage is implemented I'm just
-    # returning data from a text file that contains json elements
-
-    with open("events.json", "r") as input_data:
-        # you should use something else here than just plaintext
-        # check out jsonfiy method or the built in json module
-        # http://flask.pocoo.org/docs/0.10/api/#module-flask.json
-        return input_data.read()
+        return month_str
 
 
 #generate database

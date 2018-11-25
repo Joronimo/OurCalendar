@@ -1,103 +1,93 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="static/calendar.css">
-</head>
 
-<div class="container">
-  <div class="calendar light">
-    <div class="calendar_header">
-      <h1 class = "header_title">Welcome Back</h1>
-      <p class="header_copy"> Calendar Plan</p>
-    </div>
-    <div class="calendar_plan">
-      <div class="cl_plan">
-        <div class="cl_title">Today</div>
-        <div class="cl_copy">22nd  April  2018</div>
-        <div class="cl_add">
-          <i class="fas fa-plus"></i>
-        </div>
-      </div>
-    </div>
-    <div class="calendar_events">
-      <p class="ce_title">Upcoming Events</p>
-      <div class="event_item">
-        <div class="ei_Dot dot_active"></div>
-        <div class="ei_Title">10:30 am</div>
-        <div class="ei_Copy">Monday briefing with the team</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">12:00 pm</div>
-        <div class="ei_Copy">Lunch for with the besties</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">13:00 pm</div>
-        <div class="ei_Copy">Meet with the client for final design <br> @foofinder</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">14:30 am</div>
-        <div class="ei_Copy">Plan event night to inspire students</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">15:30 am</div>
-        <div class="ei_Copy">Add some more events to the calendar</div>
-      </div>
-    </div>
-  </div>
-
-<div class="calendar dark">
-    <div class="calendar_header">
-      <h1 class = "header_title">Welcome Back</h1>
-      <p class="header_copy"> Calendar Plan</p>
-    </div>
-    <div class="calendar_plan">
-      <div class="cl_plan">
-        <div class="cl_title">Today</div>
-        <div class="cl_copy">22nd  April  2018</div>
-        <div class="cl_add">
-          <i class="fas fa-plus"></i>
-        </div>
-      </div>
-    </div>
-    <div class="calendar_events">
-      <p class="ce_title">Upcoming Events</p>
-      <div class="event_item">
-        <div class="ei_Dot dot_active"></div>
-        <div class="ei_Title">10:30 am</div>
-        <div class="ei_Copy">Monday briefing with the team</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">12:00 pm</div>
-        <div class="ei_Copy">Lunch for with the besties</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">13:00 pm</div>
-        <div class="ei_Copy">Meet with the client for final design <br> @foofinder</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">14:30 am</div>
-        <div class="ei_Copy">Plan event night to inspire students</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">15:30 am</div>
-        <div class="ei_Copy">Add some more events to the calendar</div>
-      </div>
-    </div>
-  </div>
-
+<div class="pill-nav">
+  <a class="active" href="/">Home</a>
+  <a href="/inbox">Notifications</a>    
+  <a href="/invite">Create Event</a>
+  <a href="/cal">Calendar</a>
 </div>
 
+<TABLE BORDER=3 CELLSPACING=3 CELLPADDING=3> 
+<TR>
+<TD COLSPAN="7" ALIGN=center><B>December 2001</B></TD> 
+</TR>
+<TR> 
+<TD COLSPAN="7" ALIGN=center><I>Another year comes to an end</I></TD>
+</TR>
 
+<TR> 
+<TD ALIGN=center>Sun</TD>
+<TD ALIGN=center>Mon</TD>
+<TD ALIGN=center>Tue</TD>
+<TD ALIGN=center>Wed</TD>
+<TD ALIGN=center>Thu</TD>
+<TD ALIGN=center>Fri</TD>
+<TD ALIGN=center>Sat</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center>1</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center>2</TD>
+<TD ALIGN=center>3</TD>
+<TD ALIGN=center>4</TD>
+<TD ALIGN=center>5</TD>
+<TD ALIGN=center>6</TD>
+<TD ALIGN=center>7</TD>
+<TD ALIGN=center>8</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center>9</TD>
+<TD ALIGN=center>10</TD>
+<TD ALIGN=center>11</TD>
+<TD ALIGN=center>12</TD>
+<TD ALIGN=center>13</TD>
+<TD ALIGN=center>14</TD>
+<TD ALIGN=center>15</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center>16</TD>
+<TD ALIGN=center>17</TD>
+<TD ALIGN=center>18</TD>
+<TD ALIGN=center>19</TD>
+<TD ALIGN=center>20</TD>
+<TD ALIGN=center>21</TD>
+<TD ALIGN=center>22</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center>23</TD>
+<TD ALIGN=center>24</TD>
+<TD ALIGN=center>25</TD>
+<TD ALIGN=center>26</TD>
+<TD ALIGN=center>27</TD>
+<TD ALIGN=center>28</TD>
+<TD ALIGN=center>29</TD>
+</TR>
+
+<TR> 
+<TD ALIGN=center>30</TD>
+<TD ALIGN=center>31</TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+<TD ALIGN=center></TD>
+
+</TR>
+
+</TABLE>
 
 {% endblock %}
