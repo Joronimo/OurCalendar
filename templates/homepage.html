@@ -8,63 +8,143 @@
   <a href="/invite">Create Event</a>
 </div>
 
+<style>
+    .indent-1 {float: left;}
+    .indent-1 section {width: 50%; float: left;}
+</style>
+
+<script type="text/javascript" src="static/calendar.js"></script>
 
 
-<html>
+<section class="indent-1">
+    <!-- Section 1 --> 
+    <section>
+        <head>
+          <link rel="stylesheet" type="text/css" href="static/calendar.css">
+        </head>
 
-<head>
-  <link rel="stylesheet" type="text/css" href="static/calendar.css">
-</head>
+        <body>
 
-<body>
+        <div class="container">
+          <div class="calendar light">
+            <div class="calendar_header">
+              <h1 class="header_copy"> Calendar Plan</h1>
+            </div>
+            <div class="calendar_plan">
+              <div class="cl_plan">
+                <div class="cl_title">Today</div>
+                <div class="cl_copy" id="today" "startTime()"></div>
+                <div class="cl_add">
+                  <i class="fas fa-plus"></i>
+                </div>
+              </div>
+            </div>
+            <div class="calendar_events">
+              <p class="ce_title">Upcoming Events</p>
+              <div class="event_item">
+                <div class="ei_Dot dot_active"></div>
+                <div class="ei_Title">10:30 am</div>
+                <div class="ei_Copy">Monday briefing with the team</div>
+              </div>
+              <div class="event_item">
+                <div class="ei_Dot"></div>
+                <div class="ei_Title">12:00 pm</div>
+                <div class="ei_Copy">Lunch for with the besties</div>
+              </div>
+              <div class="event_item">
+                <div class="ei_Dot"></div>
+                <div class="ei_Title">13:00 pm</div>
+                <div class="ei_Copy">Meet with the client for final design <br> @foofinder</div>
+              </div>
+              <div class="event_item">
+                <div class="ei_Dot"></div>
+                <div class="ei_Title">14:30 am</div>
+                <div class="ei_Copy">Plan event night to inspire students</div>
+              </div>
+              <div class="event_item">
+                <div class="ei_Dot"></div>
+                <div class="ei_Title">15:30 am</div>
+                <div class="ei_Copy">Add some more events to the calendar</div>
+              </div>
+            </div>
+          </div>
 
-<div class="container">
-  <div class="calendar light">
-    <div class="calendar_header">
-      <h1 class = "header_title">Welcome Back</h1>
-      <p class="header_copy"> Calendar Plan</p>
-    </div>
-    <div class="calendar_plan">
-      <div class="cl_plan">
-        <div class="cl_title">Today</div>
-        <div class="cl_copy" id="today" "startTime()"></div>
-        <script type="text/javascript" src="static/calendar.js"></script>
-        <div class="cl_add">
-          <i class="fas fa-plus"></i>
         </div>
-      </div>
-    </div>
-    <div class="calendar_events">
-      <p class="ce_title">Upcoming Events</p>
-      <div class="event_item">
-        <div class="ei_Dot dot_active"></div>
-        <div class="ei_Title">10:30 am</div>
-        <div class="ei_Copy">Monday briefing with the team</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">12:00 pm</div>
-        <div class="ei_Copy">Lunch for with the besties</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">13:00 pm</div>
-        <div class="ei_Copy">Meet with the client for final design <br> @foofinder</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">14:30 am</div>
-        <div class="ei_Copy">Plan event night to inspire students</div>
-      </div>
-      <div class="event_item">
-        <div class="ei_Dot"></div>
-        <div class="ei_Title">15:30 am</div>
-        <div class="ei_Copy">Add some more events to the calendar</div>
-      </div>
-    </div>
-  </div>
+        </body>
+    </section>
 
-</div>
-</body>
+    <!-- Section 2 -->
+    <section>
+        <table id="calendar">
+        <button type="button" id="left"><</button>
+        <div id="monthYear">{{ monthYear }}</div>
+        <button type="button" id="right">></button>
+
+        <tr class="weekdays">
+          <th scope="col">Sun</th>
+          <th scope="col">Mon</th>
+          <th scope="col">Tue</th>
+          <th scope="col">Wed</th>
+          <th scope="col">Thu</th>
+          <th scope="col">Fri</th>
+          <th scope="col">Sat</th>
+        </tr>
+
+        <TR> 
+        <td ALIGN=center><input type="button" id="sa1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="m1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="tu1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="w1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="th1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="f1" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="su1" onClick="getEvents();"></td>
+        </TR>
+
+        <TR> 
+        <td ALIGN=center><input type="button" id="sa2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="m2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="tu2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="w2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="th2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="f2" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="su2" onClick="getEvents();"></td>
+        </TR>
+
+        <TR> 
+        <td ALIGN=center><input type="button" id="sa3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="m3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="tu3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="w3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="th3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="f3" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="su3" onClick="getEvents();"></td>
+        </TR>
+
+        <TR> 
+        <td ALIGN=center><input type="button" id="sa4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="m4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="tu4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="w4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="th4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="f4" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="su4" onClick="getEvents();"></td>
+        </TR>
+
+        <TR> 
+        <td ALIGN=center><input type="button" id="sa5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="m5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="tu5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="w5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="th5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="f5" onClick="getEvents();"></td>
+        <td ALIGN=center><input type="button" id="su5" onClick="getEvents();"></td>
+        </TR>
+
+
+        </TABLE>
+    </section>
+</section>  
+
+
 
 {% endblock %}
