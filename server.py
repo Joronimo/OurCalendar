@@ -121,7 +121,7 @@ def processed_registration():
 
 
 @app.route("/month-days", methods=["POST"])
-def get_session_user_month_events():
+def get_users_month_events():
     """for the month get all of the logged in user's events."""
 
     data = request.data.decode("utf-8")
@@ -133,37 +133,46 @@ def get_session_user_month_events():
     print(year_str)
 
     month_digit = month_str_to_digit(month_str)
-    
-    last_day_month = monthrange(int(year_str), month_digit)[1]
-    print(last_day_month)
+    year_digit = int(year_str)
+        
+    #get session["user_id"]'s invites for the month provided. 
 
-
-
-    # data=request.stream.read()
-    # print(data, request.data)
     u_id = session["user_id"]
 
+    user_invites = Invited.query.filter_by(user_id=u_id, is_declined=False).all()
+    invited_events = []
 
-    # day_num = get_number_of_days(month)
+    for i in user_invites:
+        invited_events.append(Event.query.filter_by(id=i.event_id).all())
 
-    # response_data = {'day_num': day_num}
+    events = {}
+    
+    for i in invited_events:
+        for e in i:
+            start = e.start_time
+            end = e.end_time
+            desc = e.description
+            all_invited = Invited.query.filter_by(event_id=e.id).all()
+            invitees_names = ""
+            for i in all_invited:
+                invitee = User.query.filter_by(id=i.user_id).first()
+                invitees_names += invitee.name + ', '
+                host_name = User.query.filter_by(id=e.host).first()
+                host = host_name.name 
+        if start.year == year_digit and start.month == month_digit:
+            events[e.name] = host, str(start), str(end), desc, invitees_names[:-2]
 
-    # invites = Invited.query.filter_by(user_id=u_id).all()
+    response_data = events
+    print("EVEEENTS    ", events)
+    print("json  ", jsonify(response_data))
 
-    resp = Response(""+response_data, status=200, mimetype='application/json')
-    print(resp)
-    return resp
-    # print("ahhhhhhhhhhh", list_month_year)
+    return jsonify(response_data)
 
-    # invites = Invited.query.filter_by(user_id=u_id).all()
+    # resp = Response(response_data, status=200, mimetype='application/json')
+    # print(resp)
+    # return resp
 
-    # # for i in invites:
-    # #     if is_declined == False:
 
-    # date = datetime.now()
-    # month_year = date.strftime("%B %Y")
-
-    # return render_template("homepage.html", monthYear=month_year) 
 
 
 @app.route("/invite")
@@ -181,6 +190,13 @@ def find_event_send_invitation():
     priority_users = request.form.get("priority_users").split(",")
 
     user_objects = get_user_objs_from_priority_users_list_recursive(priority_users)
+    # if the request.form returns incorrect user data ie. typo, this should 
+    # catch it and return an error, so the user can adjust accordingly.
+    if None in user_objects:
+        message = Markup("A username or email does not exist, please check the data and try again.")
+        flash(message)
+        return render_template("invite.html")
+
     host = User.query.filter_by(id=session["user_id"]).first()
     user_objects.append(host)
 
@@ -442,18 +458,7 @@ def priority_user_declined_invite():
 
     return render_template("inbox.html")
 
-
-@app.route('/events')
-def load_user_events():
-
-    u_id = session["User"]
-
-    #get user's invites
-    #get user's events data. 
-    #if invite not accepted color = grey
-    #if invite declined do not display. 
-
-
+ 
 
 
 @app.route('/data')
@@ -477,6 +482,7 @@ def get_user_objs_from_priority_users_list_recursive(p_users_list):
         """ by inputing the list of users for an event, this will clean the list 
             and return a new list of user objects per user. Or return an error 
             if the host input a name in an error.""" 
+
         user_objects = []
 
         for p in p_users_list: 
@@ -492,16 +498,13 @@ def get_user_objs_from_priority_users_list_recursive(p_users_list):
                 if "@" in p:   
                     user = User.query.filter_by(email=p).first()
                     user_objects.append(user)
+                    print("USER IF    ", type(user), user)
                 else:
                     user = User.query.filter_by(username=p).first()
                     user_objects.append(user)
+                    print("USER ELSE    ", type(user), user)
 
-        # if the request.form returns incorrect user data ie. typo, this should 
-        # catch it and return an error, so the user can adjust accordingly.
-        if None in user_objects:
-            message = Markup("A username or email does not exist, please check the data and try again.")
-            flash(message)
-            return render_template("invite.html")
+        
 
         return user_objects
 
