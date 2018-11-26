@@ -17,7 +17,8 @@ var loadPageThenLoadScriptsListed = function(){
   right.addEventListener("click", nextMonth);
 
   //get default startTime()
-  startTime();
+  todayStartTime();
+  
 
   //load calendar days and month on webpage load
   var domMonthYear = document.getElementById("monthYear");
@@ -35,6 +36,7 @@ var loadPageThenLoadScriptsListed = function(){
   }
   sendMonthYearForEvents(todaySidebar);
 
+  //get 
 
 };
 
@@ -49,36 +51,31 @@ if (
 }
 //
 
+function todayStartTime() {
 
-function checkTime(i) {
-              if (i < 10) {
-                i = "0" + i;
-              }
-              return i;
-            }
-
-function startTime() {
   var today = new Date();
-  var h = today.getHours();
-  var min = today.getMinutes();
-  var str = today.toDateString();
+  //Mon Nov 26 2018 00:06:07 GMT-0800 (Pacific Standard Time)
+  var month = today.getMonth();
+  var day = today.getDate();
+  var year = today.getYear();
+  startTime(year, month, day);
+  }
 
-  // add a zero in front of numbers<10
-  min = checkTime(min);
+function startTime(year, month, day) {
+  // for event list, display the date the events are listed under.
 
-  document.getElementById("today").innerHTML = str + " " + h + ":" + min ;
+  var date = new Date(year, month, day)
+  var str = date.toDateString();
 
-  t = setTimeout(function() {
-    startTime()
-  }, 500);
+  document.getElementById("date").innerHTML = str;
+
+
 }
-
-// function myFunc(variable){
-//             var s = document.getElementById(variable);
-//             s.value = "new value";
 
 
 function prevMonth() {
+  // update calendar and load events based on user click 'back ' on calendar.
+
   var monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", 
                       "December"];
@@ -112,6 +109,8 @@ function prevMonth() {
 
 
 function nextMonth() {
+  // update calendar and load events based on user click 'forward' on calendar.
+  
   var monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", 
                       "December"];
@@ -189,6 +188,8 @@ function updateSidebarEvents(day, month, year){
   // this will update the sidebar with the given day's event info
 
   $( ".event_item" ).empty();
+
+  startTime(year, month, day);
 
   var counter = 0
   for (event in events){
