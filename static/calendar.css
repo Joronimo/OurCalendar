@@ -13,56 +13,6 @@ body{
   width:809px;
 }
 
-.table{
-  width:550px;
-  box-shadow: 0px 0px 35px -16px rgba(0,0,0,0.75);
-  font-family: 'Roboto', sans-serif;
-  padding: 20px 30px;
-  color:#363b41;
-  display: inline-block;
-}
-
-.weekdays {
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-}
-
-.month {
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-}
-
-.calendarCells {
-  width:75px;
-  height: 175px;
-  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
-  font-family: 'Roboto', sans-serif;
-  padding: 30px 40px;
-  color:#363b41;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.calendarCells:focus{
-  width:75px;
-  height: 175px;
-  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
-  font-family: 'Roboto', sans-serif;
-  padding: 30px 40px;
-  color:#FF8494;
-  cursor: pointer;
-  display: inline-block; 
-}
-
-.button {
-  width:5px;
-  height: 5px;
-  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
-  font-family: 'Roboto', sans-serif;
-  padding: 10px 10px;
-  background-color:#FF8494;
-  cursor: pointer;
-  display: inline-block;
-}
-
 .light{
   background-color: #fff;
 }
@@ -173,4 +123,54 @@ body{
     color:#fff;
   }
   
+}
+
+.table{
+  width:550px;
+  box-shadow: 0px 0px 35px -16px rgba(0,0,0,0.75);
+  font-family: 'Roboto', sans-serif;
+  padding: 20px 30px;
+  color:#363b41;
+  display: inline-block;
+}
+
+.weekdays {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.month {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.calendarCells {
+  width:75px;
+  height: 175px;
+  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
+  font-family: 'Roboto', sans-serif;
+  padding: 30px 40px;
+  color:#363b41;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.calendarCells:focus{
+  width:75px;
+  height: 175px;
+  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
+  font-family: 'Roboto', sans-serif;
+  padding: 30px 40px;
+  color:#FF8494;
+  cursor: pointer;
+  display: inline-block; 
+}
+
+.button {
+  width:5px;
+  height: 5px;
+  box-shadow: 0px 0px 5px -2px rgba(0,0,0,0.75);
+  font-family: 'Roboto', sans-serif;
+  padding: 10px 10px;
+  background-color:#FF8494;
+  cursor: pointer;
+  display: inline-block;
 }

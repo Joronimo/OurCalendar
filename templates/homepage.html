@@ -52,10 +52,13 @@
 
     <!-- Section 2 -->
     <section>
-        <table class="table" id="calendar">
+
+        <h1 class="month" id="monthYear">{{ monthYear }}</h1>
+        
         <button type="button" class="button" id="left"><</button>
-        <div class="month" id="monthYear">{{ monthYear }}</div>
         <button type="button" class="button" id="right">></button>
+          
+        <table class="table" id="calendar">
 
         <tr class="weekdays">
           <th scope="col">Sun</th>
