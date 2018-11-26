@@ -2,6 +2,7 @@ backcall==0.1.0
 blinker==1.4
 Click==7.0
 decorator==4.3.0
+faker>=1.0.0
 Flask==1.0.2
 Flask-DebugToolbar==0.10.1
 Flask-SQLAlchemy==2.3.2

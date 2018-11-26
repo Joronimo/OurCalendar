@@ -19,12 +19,26 @@ var loadPageThenLoadScriptsListed = function(){
   //get default startTime()
   startTime();
 
-  //display month data
-  getCalendarByMonth();
+  //load calendar days and month on webpage load
+  var domMonthYear = document.getElementById("monthYear");
+  var currentYear = domMonthYear.textContent.split(" ")[1];
+  var currentMonth = domMonthYear.textContent.split(" ")[0];
+  var month = getMonthNumber(currentMonth)
+  var year = parseInt(currentYear)
+  number_calendar(month, year);
+
+  //get user's events
+  function todaySidebar(events){
+    date = new Date()
+    updateSidebarEvents(date.getDate(), date.getMonth(), date.getYear()+1900, 
+      events)
+  }
+  sendMonthYearForEvents(todaySidebar);
 
 
 };
 
+//run functions only once the page is ready.
 if (
     document.readyState === "complete" ||
     (document.readyState !== "loading" && !document.documentElement.doScroll)
@@ -33,7 +47,7 @@ if (
 } else {
   document.addEventListener("DOMContentLoaded", loadPageThenLoadScriptsListed);
 }
-
+//
 
 
 function checkTime(i) {
@@ -73,6 +87,9 @@ function prevMonth() {
   var currentYear = domMonthYear.textContent.split(" ")[1];
   var currentmonth = domMonthYear.textContent.split(" ")[0];
 
+  var month = 0
+  var year = 0
+
   for(i=0; i<monthNames.length; i++) {
       name = monthNames[i]
       if (name == currentmonth) {
@@ -80,13 +97,17 @@ function prevMonth() {
           var reducedYear = parseInt(currentYear) - 1
           var stringYear = reducedYear.toString()
           domMonthYear.innerHTML = monthNames.slice(-1)[0] + " " + stringYear
+          month = 12
+          year = reducedYear
         } else {
           domMonthYear.innerHTML = monthNames[i-1] + " " + currentYear
+          month = i-1
+          year = parseInt(currentYear)
         }
-    
       }
-  }  
-
+  } 
+  number_calendar(month, year);
+  sendMonthYearForEvents(function empty(){}) 
 }
 
 
@@ -99,6 +120,9 @@ function nextMonth() {
   var currentYear = domMonthYear.textContent.split(" ")[1];
   var currentMonth = domMonthYear.textContent.split(" ")[0];
 
+  var month = 0
+  var year = 0
+
   for(i=0; i<monthNames.length; i++) {
       name = monthNames[i]
       if (name == currentMonth) {
@@ -106,15 +130,21 @@ function nextMonth() {
           var increasedYear = parseInt(currentYear) + 1
           var stringYear = increasedYear.toString()
           domMonthYear.innerHTML = monthNames[0] + " " + stringYear
+          month = 1
+          year = increasedYear
         } else { 
           domMonthYear.innerHTML = monthNames[i+1] + " " + currentYear
+          month = i+2
+          year = parseInt(currentYear)
         }
       }
-  }  
+  }
+  number_calendar(month, year);
+  sendMonthYearForEvents(function empty(){})  
 
 }
 
-function getCalendarByMonth() {
+function sendMonthYearForEvents(callback) {
   var domMonthYear = document.getElementById("monthYear");
   var currentYear = domMonthYear.textContent.split(" ")[1];
   var currentMonth = domMonthYear.textContent.split(" ")[0];
@@ -122,104 +152,163 @@ function getCalendarByMonth() {
   var data = currentMonth + " " + currentYear
 
   $.post("/month-days", data, function(response){
-    console.log(response, status)
+    console.log("success")
+    console.log(response)
+    events = response
+    callback(events)
+
+    addClickListenersOnCalButtons(events)
+
+    // for cell in calendar
+    //    add onclick call updateSidebarEvents with celldate and events
   })
-
-  // .then(
-  //     function success(data) {
-  //       console.log("success")
-  //         if (monthYear !== domMonthYear) {
-  //             alert('Something went wrong.  Name is now ' + name);
-  //         }
-  //     },
-
-  //     function fail(data, status) {
-  //       console.log("fail")
-  //         alert('Request failed.  Returned status of ' + status);
-  //     }
-  // );
-  // stop link reloading the page
-  //event.preventDefault();
 }
 
 
-// function getEvents() {
-//   var data = $.get('/month-events')
-// }
+
+
+function addClickListenersOnCalButtons(events) {
+  var domMonthYear = document.getElementById("monthYear");
+  var year = domMonthYear.textContent.split(" ")[1];
+  var month = domMonthYear.textContent.split(" ")[0];
+
+  function holdData(event){
+    cell = event.target
+    day = cell.value
+    updateSidebarEvents(day, getMonthNumber(month), parseInt(year));
+  }
+
+  var cells = document.getElementsByClassName("calendarCells");
+    for (id in cells) {
+      cells[id].onclick = holdData
+    }
+
+}
+
+function updateSidebarEvents(day, month, year){
+  // this will update the sidebar with the given day's event info
+
+  $( ".event_item" ).empty();
+
+  var counter = 0
+  for (event in events){
+
+    // 1:1 me + thoughts: Array(5)
+  // 0: "Jon Green"
+  // 1: "2018-11-21 12:00:00"
+  // 2: "2018-11-21 12:30:00"
+  // 3: "meeting with my thoughts"
+  // 4: "Jon Green"
+    start_time = events[event][1]
+    END_TIMES = events[event][2]
+    
+    start = start_time.split(" ")[0].split("-")
+    //start = ["2018", "11", "21"]
+    e_year = parseInt(start[0])
+    e_month = parseInt(start[1])
+    e_day = parseInt(start[2])
+
+    var t = start_time.split(" ")[1].slice(0, -3) 
+    var e = END_TIMES.split(" ")[1].slice(0, -3)
+    var time = ""
+    time = t + " - " + e
+
+    var event_name = "Event: " + Object.keys(events)[counter]
+    var desc = "Description: " + events[event][3]
+    var host = "Host: " + events[event][0]
+    var invited = "Invited: " + events[event][4]
+
+    if (e_year == year && e_month == month && e_day == day){
+      $( ".event_item" ).append( "<div class='ei_Dot dot_active'></div>\
+                <div class='ei_Title' id='time'>"+time+"</div>\
+                <br>\
+                <div class='ei_Copy' id='name'>"+event_name+"</div>\
+                <br>\
+                <div class='ei_Copy' id='desc'>"+desc+"</div>\
+                <br>\
+                <div class='ei_Copy' id='host'>"+host+"</div>\
+                <br>\
+                <div class='ei_Copy' id='who'>"+invited+"</div>\
+                <br>" );
+    
+    counter++; 
+      
+    }
+
+
+    }
+  
+
+  // ban = "2018-11-21 12:00:00"
+  // "2018-11-21 12:00:00"
+  // ban.split(" ")[0].split("-")
+  // (3) ["2018", "11", "21"]
+
+  console.log("update called on sidebar with: ", day, month, year, events)
+}
+
+
+function getMonthNumber(month) {
+  var monthNames = ["January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", 
+                    "December"];
+
+  var counter = 0
+  for(i=0; i<monthNames.length; i++) {
+    counter++;
+    if (monthNames[i] == month) {
+      return counter
+    }
+
+  }
+
+}
+
+
+function get_number_days(month) {
+  var date = new Date(2018, month, 0)
+  return date.getDate()
+}
+
+
+function clear_calendar(){
+  var cells = document.getElementsByClassName("calendarCells")
+  for (ii in cells){
+    cells[ii].value = ""
+  }
+}
+
+
+function number_calendar(month, year) {
+
+    clear_calendar();
+
+    var names = new Array(7);
+    names[0] = "su"
+    names[1] = "m"
+    names[2] = "tu"
+    names[3] = "w"
+    names[4] = "th"
+    names[5] = "f"
+    names[6] = "sa"
+
+    var current_week = 1
+    
+    for (day=1; day <= get_number_days(month); day++){
+      var date = new Date(year, month, day)
+      var day_of_week = date.getDay()
+      var target_cell_id = names[day_of_week] + current_week
+      console.log(target_cell_id, day)
+
+      var id_week = document.getElementById(target_cell_id);
+      id_week.value = day
+
+      if(day_of_week == 6){
+        current_week++;
+      }
+      
+    }
+}
 
 
 
-// function calendar(month) {
-
-//     //Variables to be used later.  Place holders right now.
-//     var padding = "";
-//     var totalFeb = "";
-//     var i = 1;
-//     var testing = "";
-
-//     var current = new Date();
-//     var cmonth = current.getMonth(); // current (today) month
-//     var day = current.getDate();
-//     var year = current.getFullYear();
-//     var tempMonth = month + 1; //+1; //Used to match up the current month with the correct start date.
-//     var prevMonth = month - 1;
-
-//     //Determing if Feb has 28 or 29 days in it.  
-//     if (month == 1) {
-//         if ((year % 100 !== 0) && (year % 4 === 0) || (year % 400 === 0)) {
-//             totalFeb = 29;
-//         } else {
-//             totalFeb = 28;
-//         }
-//     }
-
-//     // Setting up arrays for the name of the months, days, and the number of days in the month.
-//     var monthNames = ["January", "February", "March", "April", "May", "June",
-//                       "July", "August", "September", "October", "November", 
-//                       "December"];
-//     var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thrusday",
-//                     "Friday", "Saturday"];
-//     var totalDays = ["31", "" + totalFeb + "", "31", "30", "31", "30", "31", 
-//                      "31", "30", "31", "30", "31"];
-
-//     // Temp values to get the number of days in current month, and previous month. Also getting the day of the week.
-//     var tempDate = new Date(tempMonth + ' 1 ,' + year);
-//     var tempweekday = tempDate.getDay();
-//     var tempweekday2 = tempweekday;
-//     var dayAmount = totalDays[month];
-
-//     // After getting the first day of the week for the month, padding the other days for that week with the previous months days.  IE, if the first day of the week is on a Thursday, then this fills in Sun - Wed with the last months dates, counting down from the last day on Wed, until Sunday.
-//     while (tempweekday > 0) {
-//         padding += "<td class='premonth'></td>";
-//         //preAmount++;
-//         tempweekday--;
-//     }
-//     // Filling in the calendar with the current month days in the correct location along.
-//     while (i <= dayAmount) {
-
-//         // Determining when to start a new row
-//         if (tempweekday2 > 6) {
-//             tempweekday2 = 0;
-//             padding += "</tr><tr>";
-//         }
-
-//         // checking to see if i is equal to the current day, if so then we are making the color of that cell a different color using CSS. Also adding a rollover effect to highlight the day the user rolls over. This loop creates the actual calendar that is displayed.
-//         if (i == day && month == cmonth) {
-//             padding += "<td class='currentday'  onMouseOver='this.style.background=\"#00FF00\"; this.style.color=\"#FFFFFF\"' onMouseOut='this.style.background=\"#FFFFFF\"; this.style.color=\"#00FF00\"'>" + i + "</td>";
-//         } else {
-//             padding += "<td class='currentmonth' onMouseOver='this.style.background=\"#00FF00\"' onMouseOut='this.style.background=\"#FFFFFF\"'>" + i + "</td>";
-//         }
-//         tempweekday2++;
-//         i++;
-//     }
-
-
-//     // Outputing the calendar onto the site.  Also, putting in the month name and days of the week.
-//     var calendarTable = "<table class='calendar'> <tr class='currentmonth'><th colspan='7'>" + monthNames[month] + " " + year + "</th></tr>";
-//     calendarTable += "<tr class='weekdays'>  <td>Sun</td>  <td>Mon</td> <td>Tues</td> <td>Wed</td> <td>Thurs</td> <td>Fri</td> <td>Sat</td> </tr>";
-//     calendarTable += "<tr>";
-//     calendarTable += padding;
-//     calendarTable += "</tr></table>";
-//     document.getElementById("calendar").innerHTML += calendarTable;
-
-// }

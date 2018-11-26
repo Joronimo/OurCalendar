@@ -1,4 +1,3 @@
-import sqlalchemy 
 
 from faker import Faker
 from model import connect_to_db, db, User, Event, Invited
@@ -25,8 +24,10 @@ def seed():
         db.session.commit()
 
         e = Event(is_active=True, 
+                name='1:1 me + thoughts',
                 start_time=datetime.datetime(2018, 11, day, hour, 00, 00), 
                 end_time=datetime.datetime(2018, 11, day, hour, 30, 00),
+                description="meeting with my thoughts",
                 host=u.id)
         db.session.add(e)
         db.session.commit()
