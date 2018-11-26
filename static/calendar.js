@@ -29,12 +29,12 @@ var loadPageThenLoadScriptsListed = function(){
   number_calendar(month, year);
 
   //get user's events
-  function todaySidebar(events){
-    date = new Date()
-    updateSidebarEvents(date.getDate(), date.getMonth(), date.getYear()+1900, 
-      events)
-  }
-  sendMonthYearForEvents(todaySidebar);
+  // function todaySidebar(events){
+  //   date = new Date()
+  //   updateSidebarEvents(date.getDate(), date.getMonth(), date.getYear()+1900, 
+  //     events)
+  // }
+  sendMonthYearForEvents();
 
   //get 
 
@@ -58,15 +58,18 @@ function todayStartTime() {
   var month = today.getMonth();
   var day = today.getDate();
   var year = today.getYear();
-  startTime(year, month, day);
+
+  startTime(year+1900, month, day);
   }
+  
 
 function startTime(year, month, day) {
   // for event list, display the date the events are listed under.
 
+
   var date = new Date(year, month, day)
   var str = date.toDateString();
-
+ 
   document.getElementById("date").innerHTML = str;
 
 
@@ -154,7 +157,7 @@ function sendMonthYearForEvents(callback) {
     console.log("success")
     console.log(response)
     events = response
-    callback(events)
+    
 
     addClickListenersOnCalButtons(events)
 
@@ -189,7 +192,7 @@ function updateSidebarEvents(day, month, year){
 
   $( ".event_item" ).empty();
 
-  startTime(year, month, day);
+  startTime(year, month-1, day);
 
   var counter = 0
   for (event in events){
