@@ -1,20 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="pill-nav">
-  <a class="active" href="/">Home</a>
-  <a href="/inbox">Notifications</a>    
-  <a href="/invite">Create Event</a>
-</div>
+<h4>Log In</h4>
 
-<h2>Log In Here! </h2>
 <form action="/process-login" method="POST">
 	Email: <input type="text" name="email">
 	Password: <input type="text" name="password">
-	<input type="submit">
+<button type="submit" class="btn btn-secondary" value="submit">Submit</button>
 
-<h2>Register</h2>
-<p><a href="/registration">Register</a></p>
+<p><a href="/registration">Register Here</a></p>
+
 
 </form>
 

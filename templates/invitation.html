@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="pill-nav">
-  <a class="active" href="/">Home</a>
-  <a href="/inbox">Notifications</a>    
-  <a href="/invite">Create Event</a>
-</div>
+
 
 <form action="/process-invitation" method="POST">
-    Event: <type="text" name="name"> <p> {{ event_name }} </p>
-    Event description: <type="text" name="description"> <p> {{ event_description }} </p>
+    <p><strong>Event Name</strong></p>
+    <type="text" name="name"> <p> {{ event_name }} </p>
+    <br>
+    <p><strong>Event Description</strong></p>
+    <type="text" name="description"> <p> {{ event_description }} </p>
     <br>
 
     <input id="name_event" name="name_event" type="hidden" value="{{ event_name }}">
@@ -18,18 +17,27 @@
     
 
     <div>
-        Event starts: 
+        <p><strong>Event TIme:</strong></p> 
         <p> {{ start_time }} - {{ end_time }}</p>
         <input id="start_event" name="start_event" type="hidden" value="{{ start_time }}">
         <input id="end_event" name="end_event" type="hidden" value="{{ end_time }}">
     </div>
-
-    Would you like to attend event?*
-    <input type="radio" name="attend" value="yes"> accept
-    <input type="radio" name="attend" value="no"> decline
     <br>
 
-    <input type="submit" value="submit"> 
+
+    <p><strong>Would you like to attend event?*</strong></p>  
+    <div class="btn-group btn-group-toggle jo-radio" data-toggle="buttons">
+  <label class="btn btn-primary jo-radio">
+    <input type="radio" name="attend" id="jo-radio" autocomplete="off" value="yes" checked=""> Attend
+  </label>
+  <label class="btn btn-primary jo-radio">
+    <input type="radio" name="attend" id="jo-radio" autocomplete="off" value="no"> Decline
+  </label>
+</div>
+<br>
+<br>
+    <button type="submit" class="btn btn-secondary" value="submit">Submit</button>
+
 </form>
 
 

@@ -2,11 +2,6 @@
 {% block content %}
 
 
-<div class="pill-nav">
-  <a class="active" href="/">Home</a>
-  <a href="/inbox">Notifications</a>    
-  <a href="/invite">Create Event</a>
-</div>
 
 <style>
     .indent-1 {float: left;}
@@ -20,7 +15,6 @@
     <!-- Section 1 --> 
     <section>
         <head>
-          <link rel="stylesheet" type="text/css" href="static/calendar.css">
         </head>
 
         <body>
@@ -28,7 +22,7 @@
         <div class="container">
           <div class="calendar light">
             <div class="calendar_header">
-              <h1 class="header_copy"> Calendar Plan</h1>
+              <h4 class="header_copy"> Calendar Plan</h4>
             </div>
             <div class="calendar_plan">
               <div class="cl_plan">
@@ -54,9 +48,10 @@
     <section>
 
         <h1 class="month" id="monthYear">{{ monthYear }}</h1>
-        
-        <button type="button" class="button" id="left"><</button>
-        <button type="button" class="button" id="right">></button>
+
+        <button type="button" class="btn btn-outline-secondary" id="left"><</button>
+        <button type="button" class="btn btn-outline-secondary" id="right">></button>
+
           
         <table class="table" id="calendar">
 
