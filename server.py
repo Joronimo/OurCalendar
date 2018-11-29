@@ -48,6 +48,13 @@ def homepage():
     return render_template("homepage.html", monthYear=month_year)
 
 
+@app.route("/about")
+def about():
+    """Says what Our Calendar is and why it exists."""
+
+    return render_template("about.html")
+
+
 @app.route("/login")
 def login():
     """Show login page to enter email and password."""
@@ -316,22 +323,25 @@ def process_invitation():
                 i.is_accepted = True
                 db.session.commit()
 
-            if i.is_priority == True:
-                event_user_ids.append(i.user_id)
+                if i.is_priority == True:
+                    event_user_ids.append(i.user_id)
 
-                for user in event_user_ids:
-                    if i.user_id == user:
+                    for user in event_user_ids:
+                        if i.user_id == user:
 
-                        #count if each priority user has accepted the invite
-                        if i.is_priority == True and i.is_accepted == True:
-                            count_prioirty_users += 1
+                            #count if each priority user has accepted the invite
+                            if i.is_priority == True and i.is_accepted == True:
+                                count_prioirty_users += 1
 
-                            #if all priority user's have accepted, change the 
-                            #event status to active
-                            if count_prioirty_users == len(event_user_ids):
-                                event = Event.query.filter_by(id=e_id).first()
-                                event.is_active = True
-                                db.session.commit()
+                                #if all priority user's have accepted, change the 
+                                #event status to active
+                                if count_prioirty_users == len(event_user_ids):
+                                    event = Event.query.filter_by(id=e_id).first()
+                                    event.is_active = True
+                                    db.session.commit()
+
+        return render_template("inbox.html")
+
 
 
     elif responce == "no":
@@ -350,7 +360,7 @@ def process_invitation():
                                             inv_ids=inv_ids
                                           ) 
     
-    return render_template("inbox.html")
+    
 
 
 @app.route("/assess-priority", methods=["POST"])

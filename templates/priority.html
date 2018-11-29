@@ -2,29 +2,31 @@
 {% block content %}
 
 
-<h1>The host set your attendence as vital to this event.</h1>
+<h4>The host set your attendence as vital to this event.</h4>
 
 <form action="/assess-priority" method="POST">
 
-Would you like to be removed as key member of the event and allow it to continue without you?
-<br> 
-<br>
+<p><strong>Would you like to be removed as key member of the event and allow it to continue without you?<br>
+    Or<br>
+ would you like to find a new time for the event to take place?</strong></p> 
 
-Or, would you like to find a new time for the event to take place?
-<br>
-<br>
 
-    <input type="radio" name="reason" value="new_time"> A new event time.
-    <br>
-    <input type="radio" name="reason" value="not_priority"> Not a key member.
-    <br>
-    <br>
+<div class="btn-group btn-group-toggle jo-radio" data-toggle="buttons">
+  <label class="btn btn-primary jo-radio">
+    <input type="radio" name="reason" id="jo-radio" autocomplete="off" value="new_time" checked=""> A new event time
+  </label>
+  <label class="btn btn-primary jo-radio">
+    <input type="radio" name="reason" id="jo-radio" autocomplete="off" value="not_priority"> Not a key member
+  </label>
+</div>
+<br>
+<br>
 
     <input id="event_id" name="event_id" type="hidden" value="{{ event_id }}">
     <input id="inv_ids" name="inv_ids" type="hidden" value="{{ inv_ids }}">
    
 
-    <input type="submit" value="submit"> 
+    <button type="submit" class="btn btn-secondary" value="submit">Submit</button>
 
 
 </form>

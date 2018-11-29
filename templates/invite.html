@@ -1,38 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="pill-nav">
-  <a class="active" href="/">Home</a>
-  <a href="/inbox">Notifications</a>    
-  <a href="/invite">Create Event</a>
-</div>
 
 
 <form action="/invitation" method="POST">
-  Title of Event:* <input type="text" name="event name">
+  <p><strong>Name of Event:</strong></p> <input type="text" name="event name">
   <br>
   <br>
 
-  This event CANNOT happen without the following users' confirmation:
-  <br>
+  <p><strong>This event CANNOT happen without the following users' confirmation:</strong></p>
+
   <textarea rows="5" cols="40" placeholder="Enter email addresses or usernames separated by a comma" name="priority_users"></textarea>   
   <br>
   <br>
 
-  Other attendees: 
-  <br>
+  <p><strong>Other attendees:</strong> </p>
+  
   <textarea rows="5" cols="40" placeholder="Enter email addresses or usernames separated by a comma" name="invitees"></textarea>   
   <br>
   <br>
 
-  Event description: 
-  <br>
+  <p><strong>Event description:</strong></p> 
+ 
   <textarea rows="5" cols="40" placeholder="description" name="description"></textarea>
   <br>
   <br>
 
-  How much time do you need?*
-  <br>
+  <p><strong>How much time do you need?*</strong></p>
   <select name="duration">
     <option value="15">15 minutes</option>
     <option value="30">30 minutes</option>
@@ -48,8 +42,8 @@
   <br>
   <br>
 
-  How soon would you like to host this event?*
-  <br>
+  <p><strong>How soon would you like to host this event?*</strong></p> 
+
   <select name="timeline">
     <option value="two weeks"> In the next two weeks</option>
     <option value="month">In the next 30 days</option>
@@ -59,8 +53,11 @@
   <br>
   <br>
 
-  What time of day would you like this event to take place?  
-  <br>
+  <p><strong>What time of day would you like this event to take place?*</strong></p> 
+
+
+
+
   <div>no earlier than
     <select name="no earlier than">
       <option value="1">1am</option> 
@@ -115,18 +112,10 @@
       <option value="24">12pm</option> 
     </select>
   </div>
- <!--    
-  <option value="workday">9am-6pm Monday - Friday</option>
-  <option value="after work">6pm-11pm Monday - Friday</option>
-  <option value="any"> 9am-10pm 7days a week</option>
-  <option value="weekend">9am-11pm Weekends</option>
-  <option value="lunch"> 11am-3pm 7days a week</option>
-  <option value="breakfast"> 7am-11am 7days a week</option> -->
-  
+ <br>
+
+  <button type="submit" class="btn btn-secondary" value="submit">Submit</button>
   <br>
-
-  <input type="submit">
-
 </form>
 
 
