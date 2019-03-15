@@ -29,14 +29,8 @@ var loadPageThenLoadScriptsListed = function(){
   number_calendar(month, year);
 
   //get user's events
-  // function todaySidebar(events){
-  //   date = new Date()
-  //   updateSidebarEvents(date.getDate(), date.getMonth(), date.getYear()+1900, 
-  //     events)
-  // }
   sendMonthYearForEvents();
 
-  //get 
 
 };
 
@@ -77,7 +71,7 @@ function startTime(year, month, day) {
 
 
 function prevMonth() {
-  // update calendar and load events based on user click 'back ' on calendar.
+  // update calendar and load events based on user click 'left ' on calendar.
 
   var monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", 
