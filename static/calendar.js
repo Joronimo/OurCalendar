@@ -28,7 +28,7 @@ var loadPageThenLoadScriptsListed = function(){
   var year = parseInt(currentYear)
   number_calendar(month, year);
 
-  //get user's events
+
   sendMonthYearForEvents();
 
 
@@ -72,6 +72,7 @@ function startTime(year, month, day) {
 
 function prevMonth() {
   // update calendar and load events based on user click 'left ' on calendar.
+
 
   var monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", 
